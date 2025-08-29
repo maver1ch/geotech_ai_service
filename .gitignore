@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+data/
+lib/
+lib64/
+parts/
+sdist/
+var/
+
+# Environment Variables
+.env
+
+# IDE
+*/.claude/*
+
+# Logs
+logs/
+*.log
+
+# Docker
+.dockerignore

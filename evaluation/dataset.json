@@ -1,0 +1,49 @@
+{
+  "qa_pairs": [
+    {
+      "question": "How does Settle3 determine when secondary consolidation begins in a staged analysis?",
+      "answer": "In Settle3, secondary consolidation (creep) calculations begin at the end of primary consolidation. Since 100% primary consolidation theoretically takes infinite time, the software uses a default value where secondary consolidation starts once 95% of primary consolidation has been reached. A stage in the analysis represents a specific point in time, and settlement occurs *between* stages. Therefore, secondary consolidation can only begin in a stage if the degree of consolidation from the *previous* stage has met the specified threshold (e.g., 95%). This means secondary consolidation cannot start before Stage 2 of an analysis.",
+      "citation": "Settle3 Documentation _ Theory.md"
+    },
+    {
+      "question": "What methods does Settle3 use to calculate the undrained shear strength (s_u) from CPT data?",
+      "answer": "Settle3 provides three methods for calculating undrained shear strength (s_u):\n1.  **General Method:** This method uses the formula `s_u = (q_t - σ_v)/N_kt`, where `q_t` is the corrected cone resistance, `σ_v` is the total overburden stress, and `N_kt` is a cone factor. Settle3 uses a default `N_kt` value of 14.\n2.  **Mayne (2015):** This method first calculates an empirical cone factor `N_Δ` based on pore pressure readings and then uses it to find the shear strength with the equation `s_u = (u_2 - u_0)/N_Δ`.\n3.  **Moon (2018):** This method provides a correlation of shear strength with the shear wave velocity (`V_s`) and the Overconsolidation Ratio (OCR), using the formula `s_u = 0.114 * V_s^1.18 * OCR^0.15`.",
+      "citation": "Settle3-CPT-Theory-Manual.md"
+    },
+    {
+      "question": "How does Settle3 model an excavation and what is the resulting stress calculation?",
+      "answer": "Settle3 treats an excavation as a negative load. The loading stress is calculated as `-γd`, where `γ` is the unit weight of the excavated soil and `d` is the depth of the excavation. This negative loading stress is then added to the existing overburden stress. For example, if the overburden stress is 100 kPa and an excavation is modeled, the loading stress of `-γd` is added to the 100 kPa, resulting in a total stress of 0 kPa at the bottom of the excavation (assuming `γd` equals the original overburden).",
+      "citation": "Settle3 Documentation _ Theory.md"
+    },
+    {
+      "question": "What is the Soil Behaviour Type Index (I_c) calculated from CPT data, and what does it represent?",
+      "answer": "The Soil Behaviour Type Index (I_c) is a representative value that combines the Normalized Cone Resistance (Q_t) and the Normalized Friction Ratio (F_r). It is calculated using the formula: I_c = ((3.47 - log Q_t)² + (log F_r + 1.22)²)^0.5. Essentially, I_c represents the radius of concentric circles that delineate the different soil type zones on Robertson's 1990 Soil Behaviour Type (SBT) chart, providing a continuous profile of soil type based on the CPT data.",
+      "citation": "Settle3-CPT-Theory-Manual.md"
+    },
+    {
+      "question": "What is the fundamental difference between how Settle3 models a flexible load versus a rigid load?",
+      "answer": "In Settle3, a **flexible load** is modeled by applying a uniform, planar stress across the loading region, which results in a non-uniform settlement profile. Conversely, a **rigid load** is modeled by enforcing a uniform, planar settlement across the loading area, and the software then calculates the non-uniform stress distribution required to achieve this displacement, which typically results in higher stresses around the edges of the load.",
+      "citation": "Settle3 Modelling.md"
+    },
+    {
+      "question": "How does Settle3 calculate the factor of safety against soil liquefaction?",
+      "answer": "Settle3 evaluates the potential for liquefaction by calculating a factor of safety (FS) that compares the earthquake loading, represented by the Cyclic Stress Ratio (CSR), with the soil's liquefaction resistance, represented by the Cyclic Resistance Ratio (CRR). The general formula used is:\n`FS = (CRR_7.5 * MSF * K_σ * K_α) / CSR`\nWhere `CRR_7.5` is the cyclic resistance ratio for a magnitude 7.5 earthquake, `MSF` is the magnitude scaling factor, `K_σ` is the overburden stress correction factor, and `K_α` is the ground slope correction factor.",
+      "citation": "Settle3-Liquefaction-Theory-Manual.md"
+    },
+    {
+      "question": "When using Settle3, what happens to the pore pressure calculation if an excavation extends below the water table?",
+      "answer": "When an excavation is modeled below the water table, Settle3 locally drops the water table to the bottom of the excavation to ensure the excavation is simulated as dry. This results in a drop in pore water pressure for query points inside the excavation, while points outside the excavation remain unaffected. The documentation notes that this approach is conservative and may overestimate settlement because it does not account for 3D groundwater effects like horizontal water flow into the excavated area.",
+      "citation": "Settle3 FAQ.md"
+    },
+    {
+      "question": "How can a user model a ring-shaped load in Settle3?",
+      "answer": "Settle3 offers two indirect methods to model a ring load:\n1.  **Using a single polygonal load:** Define the coordinates for the outer circle and the inner circle, then create a single continuous polygon by adding coordinates that connect the two circles.\n2.  **Using two circular loads:** Model the outer boundary of the ring with a circular load that has a positive load value, and then model the inner boundary (the hole) with a second, smaller circular load at the same location that has an equivalent negative load value.",
+      "citation": "Settle3 Modelling.md"
+    },
+    {
+      "question": "What is the purpose of the Stress Reduction Factor (r_d) in liquefaction analysis, and what are some of the methods Settle3 offers for its calculation?",
+      "answer": "The purpose of the Stress Reduction Factor (r_d) is to adjust the earthquake-induced shear stress for the flexibility of the soil column, as shear stress decreases with depth from the ground surface. It provides a more realistic profile of the shear stress at different depths.\n\nSettle3 offers several well-established methods for calculating r_d, including:\n- NCEER (1997)\n- Idriss (1999)\n- Kayen (1992)\n- Cetin et al. (2004)\n- Liao and Whitman (1986b)",
+      "citation": "Settle3-Liquefaction-Theory-Manual.md"
+    }
+  ]
+}
