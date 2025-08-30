@@ -49,7 +49,7 @@ def test_metrics_endpoint():
         expected_fields = [
             "total_requests", "tool_calls", "retrieval_calls",
             "successful_requests", "failed_requests", "average_response_time",
-            "success_rate", "uptime_seconds", "requests_per_minute"
+            "uptime_seconds", "requests_per_minute"
         ]
         
         missing_fields = [field for field in expected_fields if field not in metrics]
@@ -60,7 +60,6 @@ def test_metrics_endpoint():
         print("  ✅ Metrics endpoint working correctly")
         print(f"  📈 Current metrics preview:")
         print(f"    - Total requests: {metrics['total_requests']}")
-        print(f"    - Success rate: {metrics['success_rate']}%")
         print(f"    - Average response time: {metrics['average_response_time']:.2f}ms")
         print(f"    - Uptime: {metrics['uptime_seconds']:.1f}s")
         
@@ -229,7 +228,6 @@ def test_final_metrics():
             print(f"    📊 Total requests: {metrics['total_requests']}")
             print(f"    ✅ Successful requests: {metrics['successful_requests']}")
             print(f"    ❌ Failed requests: {metrics['failed_requests']}")
-            print(f"    🎯 Success rate: {metrics['success_rate']}%")
             print(f"    ⏱️  Average response time: {metrics['average_response_time']:.2f}ms")
             print(f"    🔧 Tool calls: {metrics['tool_calls']}")
             print(f"    📚 Retrieval calls: {metrics['retrieval_calls']}")

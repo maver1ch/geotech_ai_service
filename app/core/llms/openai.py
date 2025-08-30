@@ -32,18 +32,16 @@ class OpenAIService:
     def __init__(
         self,
         api_key: str,
-        model: str = "gpt-4o-mini",
-        timeout: int = 30,
-        max_retries: int = 3,
-        max_completion_tokens: int = 2000,
-        temperature: float = 0.1
+        model: str,
+        timeout: int,
+        max_retries: int,
+        max_completion_tokens: int 
     ):
         self.client = OpenAI(api_key=api_key, timeout=timeout)
         self.model = model
         self.timeout = timeout
         self.max_retries = max_retries
         self.max_completion_tokens = max_completion_tokens
-        self.temperature = temperature
         
         # Track usage statistics
         self.request_count = 0
@@ -196,7 +194,6 @@ class OpenAIService:
             "total_requests": self.request_count,
             "successful_requests": self.request_count - self.error_count,
             "failed_requests": self.error_count,
-            "success_rate": round((self.request_count - self.error_count) / max(self.request_count, 1) * 100, 2),
             "total_tokens_used": self.total_tokens_used,
             "average_tokens_per_request": round(self.total_tokens_used / max(self.request_count, 1), 2)
         }

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Simple OCR Script: Convert PDF files to Markdown using Google GenAI
-Chỉ làm một việc: PDF -> Markdown, không làm gì khác
+Only does one thing: PDF -> Markdown, nothing else
 """
 
 import asyncio
@@ -23,13 +23,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-GEOTECH_PDFS = [
-    "Settle3-CPT-Theory-Manual.pdf",
-    "Settle3-Liquefaction-Theory-Manual.pdf", 
-    "Settle3 Documentation _ Theory.pdf",
-    "Settle3 Documentation _ Modelling.pdf",
-    "Settle3 Documentation _ Settle3 FAQs.pdf"
-]
 
 
 class GeotechPDFOCRProcessor:
@@ -38,27 +31,31 @@ class GeotechPDFOCRProcessor:
     def __init__(self):
         self.settings = get_settings()
         self.ocr_processor = PDFToMarkdownOCR()
-        self.data_dir = Path("data/knowledge_base")
+        self.data_dir = Path("data")
         self.output_dir = self.data_dir / "markdown"
         
     async def ocr_all_pdfs(self):
-        """OCR all geotech PDFs to markdown"""
+        """OCR all PDF files found in data directory to markdown"""
         try:
-            logger.info("Starting OCR conversion of all geotech PDFs...")
+            logger.info("Starting OCR conversion of all PDF files...")
             
             # Create output directory
             self.output_dir.mkdir(parents=True, exist_ok=True)
             
+            # Discover all PDF files in the data directory
+            pdf_files = list(self.data_dir.glob('*.pdf'))
+            
+            if not pdf_files:
+                logger.warning(f"No PDF files found in {self.data_dir}")
+                return False
+            
+            logger.info(f"Found {len(pdf_files)} PDF files to process")
+            
             successful_conversions = []
             failed_conversions = []
             
-            for pdf_name in GEOTECH_PDFS:
-                pdf_path = self.data_dir / pdf_name
-                
-                if not pdf_path.exists():
-                    logger.warning(f"PDF not found: {pdf_path}")
-                    failed_conversions.append(pdf_name)
-                    continue
+            for pdf_path in pdf_files:
+                pdf_name = pdf_path.name
                 
                 try:
                     logger.info(f"Converting: {pdf_name}")
@@ -113,7 +110,7 @@ async def main():
     processor = GeotechPDFOCRProcessor()
     
     print("🚀 Starting PDF to Markdown OCR Conversion")
-    print("This will convert all geotech PDFs to Markdown format using Google GenAI")
+    print("This will automatically discover and convert all PDF files in the data directory to Markdown format using Google GenAI")
     print("Make sure GOOGLE_GENAI_API_KEY is set in your environment\n")
     
     try:
@@ -121,7 +118,7 @@ async def main():
         
         if success:
             print("🎉 OCR Conversion completed!")
-            print("Check the 'data/knowledge_base/markdown/' directory for results")
+            print("Check the 'data/markdown/' directory for results")
         else:
             print("💥 OCR Conversion failed!")
             print("Please check the logs for error details")

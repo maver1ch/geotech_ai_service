@@ -1,18 +1,5 @@
 # Python
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-data/
-lib/
-lib64/
-parts/
-sdist/
-var/
 
 # Environment Variables
 .env
@@ -26,3 +13,8 @@ logs/
 
 # Docker
 .dockerignore
+
+#File
+project_checklist.md
+INSTRUCTIONS.md
+CLAUDE.md

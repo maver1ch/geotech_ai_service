@@ -6,8 +6,6 @@ class Citation(BaseModel):
     content: str = Field(description="The retrieved text content")
     confidence_score: float = Field(description="Similarity score from vector search")
     page_index: Optional[int] = Field(default=None, description="Page number in source document")
-    thumbnail: Optional[str] = Field(default=None, description="Base64 encoded thumbnail of the page")
-    embedded_images: Optional[List[str]] = Field(default=None, description="Base64 encoded embedded images")
 
 class AskResponse(BaseModel):
     answer: str = Field(description="The final answer from the agent")
@@ -26,6 +24,3 @@ class MetricsResponse(BaseModel):
     average_response_time: float = Field(description="Average response time in milliseconds")
     uptime_seconds: float = Field(description="Service uptime in seconds")
     requests_per_minute: float = Field(description="Requests per minute rate")
-    success_rate: float = Field(description="Success rate percentage")
-    start_time: str = Field(description="Service start time in ISO format")
-    last_request_time: Optional[str] = Field(default=None, description="Last request time in ISO format")

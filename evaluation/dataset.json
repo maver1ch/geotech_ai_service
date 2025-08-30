@@ -1,49 +1,68 @@
-{
-  "qa_pairs": [
-    {
-      "question": "How does Settle3 determine when secondary consolidation begins in a staged analysis?",
-      "answer": "In Settle3, secondary consolidation (creep) calculations begin at the end of primary consolidation. Since 100% primary consolidation theoretically takes infinite time, the software uses a default value where secondary consolidation starts once 95% of primary consolidation has been reached. A stage in the analysis represents a specific point in time, and settlement occurs *between* stages. Therefore, secondary consolidation can only begin in a stage if the degree of consolidation from the *previous* stage has met the specified threshold (e.g., 95%). This means secondary consolidation cannot start before Stage 2 of an analysis.",
-      "citation": "Settle3 Documentation _ Theory.md"
-    },
-    {
-      "question": "What methods does Settle3 use to calculate the undrained shear strength (s_u) from CPT data?",
-      "answer": "Settle3 provides three methods for calculating undrained shear strength (s_u):\n1.  **General Method:** This method uses the formula `s_u = (q_t - σ_v)/N_kt`, where `q_t` is the corrected cone resistance, `σ_v` is the total overburden stress, and `N_kt` is a cone factor. Settle3 uses a default `N_kt` value of 14.\n2.  **Mayne (2015):** This method first calculates an empirical cone factor `N_Δ` based on pore pressure readings and then uses it to find the shear strength with the equation `s_u = (u_2 - u_0)/N_Δ`.\n3.  **Moon (2018):** This method provides a correlation of shear strength with the shear wave velocity (`V_s`) and the Overconsolidation Ratio (OCR), using the formula `s_u = 0.114 * V_s^1.18 * OCR^0.15`.",
-      "citation": "Settle3-CPT-Theory-Manual.md"
-    },
-    {
-      "question": "How does Settle3 model an excavation and what is the resulting stress calculation?",
-      "answer": "Settle3 treats an excavation as a negative load. The loading stress is calculated as `-γd`, where `γ` is the unit weight of the excavated soil and `d` is the depth of the excavation. This negative loading stress is then added to the existing overburden stress. For example, if the overburden stress is 100 kPa and an excavation is modeled, the loading stress of `-γd` is added to the 100 kPa, resulting in a total stress of 0 kPa at the bottom of the excavation (assuming `γd` equals the original overburden).",
-      "citation": "Settle3 Documentation _ Theory.md"
-    },
-    {
-      "question": "What is the Soil Behaviour Type Index (I_c) calculated from CPT data, and what does it represent?",
-      "answer": "The Soil Behaviour Type Index (I_c) is a representative value that combines the Normalized Cone Resistance (Q_t) and the Normalized Friction Ratio (F_r). It is calculated using the formula: I_c = ((3.47 - log Q_t)² + (log F_r + 1.22)²)^0.5. Essentially, I_c represents the radius of concentric circles that delineate the different soil type zones on Robertson's 1990 Soil Behaviour Type (SBT) chart, providing a continuous profile of soil type based on the CPT data.",
-      "citation": "Settle3-CPT-Theory-Manual.md"
-    },
-    {
-      "question": "What is the fundamental difference between how Settle3 models a flexible load versus a rigid load?",
-      "answer": "In Settle3, a **flexible load** is modeled by applying a uniform, planar stress across the loading region, which results in a non-uniform settlement profile. Conversely, a **rigid load** is modeled by enforcing a uniform, planar settlement across the loading area, and the software then calculates the non-uniform stress distribution required to achieve this displacement, which typically results in higher stresses around the edges of the load.",
-      "citation": "Settle3 Modelling.md"
-    },
-    {
-      "question": "How does Settle3 calculate the factor of safety against soil liquefaction?",
-      "answer": "Settle3 evaluates the potential for liquefaction by calculating a factor of safety (FS) that compares the earthquake loading, represented by the Cyclic Stress Ratio (CSR), with the soil's liquefaction resistance, represented by the Cyclic Resistance Ratio (CRR). The general formula used is:\n`FS = (CRR_7.5 * MSF * K_σ * K_α) / CSR`\nWhere `CRR_7.5` is the cyclic resistance ratio for a magnitude 7.5 earthquake, `MSF` is the magnitude scaling factor, `K_σ` is the overburden stress correction factor, and `K_α` is the ground slope correction factor.",
-      "citation": "Settle3-Liquefaction-Theory-Manual.md"
-    },
-    {
-      "question": "When using Settle3, what happens to the pore pressure calculation if an excavation extends below the water table?",
-      "answer": "When an excavation is modeled below the water table, Settle3 locally drops the water table to the bottom of the excavation to ensure the excavation is simulated as dry. This results in a drop in pore water pressure for query points inside the excavation, while points outside the excavation remain unaffected. The documentation notes that this approach is conservative and may overestimate settlement because it does not account for 3D groundwater effects like horizontal water flow into the excavated area.",
-      "citation": "Settle3 FAQ.md"
-    },
-    {
-      "question": "How can a user model a ring-shaped load in Settle3?",
-      "answer": "Settle3 offers two indirect methods to model a ring load:\n1.  **Using a single polygonal load:** Define the coordinates for the outer circle and the inner circle, then create a single continuous polygon by adding coordinates that connect the two circles.\n2.  **Using two circular loads:** Model the outer boundary of the ring with a circular load that has a positive load value, and then model the inner boundary (the hole) with a second, smaller circular load at the same location that has an equivalent negative load value.",
-      "citation": "Settle3 Modelling.md"
-    },
-    {
-      "question": "What is the purpose of the Stress Reduction Factor (r_d) in liquefaction analysis, and what are some of the methods Settle3 offers for its calculation?",
-      "answer": "The purpose of the Stress Reduction Factor (r_d) is to adjust the earthquake-induced shear stress for the flexibility of the soil column, as shear stress decreases with depth from the ground surface. It provides a more realistic profile of the shear stress at different depths.\n\nSettle3 offers several well-established methods for calculating r_d, including:\n- NCEER (1997)\n- Idriss (1999)\n- Kayen (1992)\n- Cetin et al. (2004)\n- Liao and Whitman (1986b)",
-      "citation": "Settle3-Liquefaction-Theory-Manual.md"
-    }
-  ]
-}
+[
+  {
+    "question": "How is the Soil Behaviour Type Index, I_c, calculated, and what does it represent conceptually in CPT analysis?",
+    "answer": "The Soil Behaviour Type Index (I_c) is calculated using the formula: I_c = ((3.47 – log Q_t)² + (log F_r + 1.22)²)⁰.⁵. Conceptually, it serves as a representative value that combines the Normalized Cone Resistance (Q_t) and the Normalized Friction Ratio (F_r) to define the radius of the concentric circles that delineate the zones on Robertson's 1990 Soil Behaviour Type (SBT) chart.",
+    "citation": "Settle3 CPT _ Theory Manual.md",
+    "context_base_on": "The soil behavior type index can be thought of as a representative value that combines Q_t and F_r to produce concentric circles delineating Robertson's 1990 SBT chart zones. I_c expresses the radius of those concentric circles. The formula is expressed as: I_c = ((3.47 – log Q_t)² + (log F_r + 1.22)²)⁰.⁵."
+  },
+  {
+    "question": "What are the two alternative methods provided in Settle3 for calculating undrained shear strength (s_u), apart from the general N_kt method?",
+    "answer": "Settle3 provides two additional methods for calculating undrained shear strength (s_u):\n1.  **Mayne (2015):** This method calculates s_u using a correlation based on the penetration pore pressure, where s_u = (u₂ - u₀) / N_Δu, and N_Δu is an empirical cone factor.\n2.  **Moon (2018):** This method calculates s_u based on a correlation with shear wave velocity (V_s) and the Overconsolidation Ratio (OCR), using the formula: s_u = 0.114 * V_s^1.18 * OCR^0.15.",
+    "citation": "Settle3 CPT _ Theory Manual.md",
+    "context_base_on": "There are two additional methods Settle3 calculates undrained shear strength: shear strength based on Mayne 2015, and Moon 2018. The Mayne (2015) method allows users to calculate shear strength based on the following equation provided by Remai (2013) for empirical cone factor: N_Δu = 24.3 * (u₂ - u₀)/(q_t - σ_v0). Then, this empirical cone factor is used for calculating shear strength equation s_u = (u₂ - u₀) / N_Δu. Moon 2018 has proposed a correlation of shear strength, Su, with shear wave velocity Vs, and OCR, expressed as s_u = 0.114 * V_s^1.18 * OCR^0.15."
+  },
+  {
+    "question": "What is the purpose of filtering CPT data in Settle3, and what is the default window size used in the filtering process?",
+    "answer": "In Settle3, CPT data can be filtered to remove data spikes. The filter works by dividing the boring into sections and discarding any data points that fall outside of a defined bandwidth, which is calculated based on the mean and standard deviation of the data within those sections. The default window size used to divide the boring into sections for this process is 0.25m.",
+    "citation": "Settle3 CPT _ Theory Manual.md",
+    "context_base_on": "In Settle3 you can filter CPT to remove data spikes. The filter will discard data outside of a defined bandwidth. The boring is divided into *n* sections, where *n* = *depth*/*(window size)*. The default window size in Settle3 is 0.25m. For each section of the boring the mean q_c and standard deviation, σ_i, are calculated."
+  },
+  {
+    "question": "What is the fundamental difference between modeling a 'flexible load' versus a 'rigid load' in Settle3, and what is the basis for choosing between them?",
+    "answer": "The choice between a flexible and rigid load requires engineering judgement, as they operate on inverse assumptions. A flexible load analysis begins by applying a planar stress across the loading area and then calculates the resulting settlement profile. Conversely, a rigid load analysis assumes a uniform planar settlement and then calculates the loading stress required to achieve that settlement. Understanding these distinct analytical approaches is crucial for selecting the appropriate load type for a given model.",
+    "citation": "Settle3 Documentation _ Modelling.md",
+    "context_base_on": "Engineering judgement is required. **Flexible Load:** Applies planar stress throughout the loading region, then calculates settlement from the applied stress. **Rigid Load:** Applies planar settlement, then calculates loading stress. Understanding these assumptions helps choose the appropriate load type for your analysis."
+  },
+  {
+    "question": "Can Settle3 directly model soil layers that are not horizontal, and what is the recommended procedure for analyzing variable soil profiles?",
+    "answer": "Settle3 does not directly support the 3D modeling of non-horizontal soil layers. However, it is possible to analyze variable soil profiles for single-point queries by using the Boussinesq stress computation method. The procedure involves modifying the soil profile in the Soil Layers dialog to match the conditions at each specific query location and then re-running the analysis for that point.",
+    "citation": "Settle3 Documentation _ Settle3 FAQs.md",
+    "context_base_on": "While Settle3 doesn't directly support 3D modeling of non-horizontal soil layers, you can analyze variable soil profiles for single-point queries using the Boussinesq stress computation method. Modify the soil profile in the Soil Layers dialog for each query location and re-run the analysis. Refer to the theory manual on non-horizontal surface layers and extruded sections for more information on modeling soil with varying surface elevations."
+  },
+  {
+    "question": "How does Settle3 account for changes in pore water pressure when an excavation extends below the water table, and what is the implication of this approach?",
+    "answer": "When an excavation in Settle3 goes below the water table, the program assumes a dry excavation by locally lowering the water table to the bottom of the excavated area. Consequently, query points within the excavation footprint will register a drop in pore water pressure, while points outside this area are unaffected. This method is considered conservative because it tends to overestimate settlement by not accounting for horizontal water flow, which would be considered in a more complex 3D groundwater analysis.",
+    "citation": "Settle3 Documentation _ Settle3 FAQs.md",
+    "context_base_on": "When excavation extends below the water table, the table is locally lowered to the excavation bottom to ensure a dry excavation. Query points inside see a pore water pressure drop, while external points are unaffected. This approach is conservative, overestimating settlement compared to a 3D groundwater analysis, as it doesn't account for horizontal water flow."
+  },
+  {
+    "question": "How does Settle3 determine the starting point for secondary consolidation calculations, and what is the implication for setting up a staged analysis?",
+    "answer": "Settle3 initiates secondary consolidation (creep) calculations only after the end of primary consolidation. Because 100% primary consolidation theoretically takes infinite time, the software uses a default threshold, typically 95% degree of consolidation, as the trigger point. A key implication for staged analysis is that settlement occurs *between* stages. Therefore, if a load is applied in Stage 1, the check for the 95% threshold occurs at the beginning of Stage 2. This means secondary consolidation cannot begin until at least Stage 2, necessitating the use of multiple stages to accurately capture its onset.",
+    "citation": "Settle3 Documentation _ Theory.md",
+    "context_base_on": "Secondary consolidation (creep) calculations begin at the end of primary consolidation. Since 100% primary consolidation theoretically requires infinite time, a default value of 95% primary consolidation marks the starting point for secondary consolidation calculations. This means secondary settlement is calculated in the current stage only if the degree of consolidation in the previous stage reached the specified value (e.g., 95%). When setting up a time-dependent consolidation analysis, remember that a stage represents a specific point in time, not a time interval. Settlement occurs *between* stages. Since the check for secondary consolidation occurs after some primary consolidation, the earliest secondary consolidation can begin is Stage 2."
+  },
+  {
+    "question": "What is the fundamental equation used in Settle3 to evaluate the potential for liquefaction, and what do its primary components (CRR, CSR, and MSF) represent?",
+    "answer": "The potential for liquefaction is evaluated by calculating a Factor of Safety (FS), which compares the earthquake loading to the soil's liquefaction resistance. The governing equation is: FS = (CRR₇.₅ * MSF / CSR) * K_α * K_σ. In this equation, CSR represents the Cyclic Stress Ratio (the seismic load), CRR₇.₅ is the Cyclic Resistance Ratio for a magnitude 7.5 earthquake (the soil's capacity to resist liquefaction), and MSF is the Magnitude Scaling Factor used to adjust the CRR for earthquake magnitudes other than 7.5.",
+    "citation": "Settle3 Liquefaction _ Theory Manual.md",
+    "context_base_on": "The potential for liquefaction can be evaluated by comparing the earthquake loading (CSR) with the liquefaction resistance (CRR), expressed as a factor of safety against liquefaction: FS = (CRR₇.₅ MSF / CSR) ⋅ K_α K_σ. Where CRR₇.₅ = cyclic resistance ratio for an earthquake with magnitude 7.5, CSR = cyclic stress ratio, MSF = magnitude scaling factor, K_σ = overburden stress correction factor, and K_α = ground slope correction factor."
+  },
+  {
+    "question": "What is the function of the stress reduction factor (r_d) in liquefaction analysis, and can you list the different formulations available for its calculation in Settle3?",
+    "answer": "The stress reduction factor, r_d, is used to estimate the maximum cyclic shear stress at various depths within a soil profile, accounting for the flexibility of the soil column. It generally has a value of 1.0 at the ground surface and decreases with depth. Settle3 provides five different formulations for calculating r_d, which are used across all analysis types (SPT, CPT, and VST): NCEER (1997), Idriss (1999), Kayen (1992), Cetin et al. (2004), and Liao and Whitman (1986b).",
+    "citation": "Settle3 Liquefaction _ Theory Manual.md",
+    "context_base_on": "The stress reduction factor, r_d, is used to determine the maximum shear stress at different depths in the soil. Values generally range 1 at the ground surface to lower values at larger depths. The SPT, CPT, and VST methods use the same r_d formulations. The following are provided in Settle3D: NCEER (1997), Idriss (1999), Kayen (1992), Cetin et al. (2004), Liao and Whitman (1986b)."
+  },
+  {
+    "question": "Before calculating the Cyclic Resistance Ratio (CRR) from SPT data, the raw N-values must be corrected. What factors are these corrections for, and what is the designation for the final, fully corrected value?",
+    "answer": "The raw N-values from a Standard Penetration Test (SPT) must be corrected to a standardized value before they can be used to calculate the CRR. These corrections account for variations in overburden pressure, hammer energy efficiency, rod length, borehole diameter, and the use of non-standard samplers. After applying all these corrections, the final, standardized value is referred to as (N₁)₆₀.",
+    "citation": "Settle3 Liquefaction _ Theory Manual.md",
+    "context_base_on": "Before the CRR can be calculated, the N values obtained from the SPT must be corrected for the following factors: overburden, rod length, non-standard sampler, borehole diameter, and hammer energy efficiency, resulting in a (N₁)₆₀ value. The equation below illustrates the correction. N₆₀ = NC_RC_SC_BC_E. (N₁)₆₀ = N₆₀C_N."
+  },
+  {
+    "question": "When using SPT data to calculate post-liquefaction reconsolidation settlement, how is the volumetric strain (ε_v) determined according to the Ishihara and Yoshimine (1992) method, and what other key parameters are required?",
+    "answer": "According to the Ishihara and Yoshimine (1992) method, the volumetric strain (ε_v) is calculated using the formula: ε_v = 1.5 ⋅ exp(-2.5D_R) ⋅ min(0.08, γ_max). This calculation is dependent on two key input parameters: the relative density of the soil (D_R), which is determined by a user-selected method, and the maximum shear strain (γ_max), which is calculated using the procedure from Zhang, Robertson, and Brachman (2004). The total settlement is then found by integrating this volumetric strain over the depth of the liquefiable layer.",
+    "citation": "Settle3 Liquefaction _ Theory Manual.md",
+    "context_base_on": "The post-liquefaction settlement is calculated by integrating the volumetric strain values over depth: S = ∫^Zmax_0 ε_v ⋅ dz. The Ishihara and Yoshimine (1992) formulation is used to calculate the volumetric strain: ε_v = 1.5 ⋅ exp(-2.5D_R) ⋅ min(0.08, γ_max). In this equation, D_R is calculated according to the method specified by the user, and γ_max is calculated according to Zhang, Robertson, and Brachman (2004)."
+  }
+]

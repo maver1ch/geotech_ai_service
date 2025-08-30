@@ -17,18 +17,19 @@ class GeminiService:
         """Extract important keywords from query for search optimization"""
         
         prompt = f"""
-Extract the most important keywords from this query for document search. Focus on:
-- Proper nouns (names, software, standards)
-- Technical terms and jargon  
-- Key concepts that define user intention
-- Domain-specific terminology
+                Extract the most important keywords from this query for document search. Focus on:
+                - Proper nouns (names, software, standards)
+                - Technical terms and jargon  
+                - Key concepts that define user intention
+                - Domain-specific terminology
 
-Query: "{query}"
+                Query: "{query}"
 
-Return only a JSON list of keywords (truely important ones):
-["keyword1", "keyword2", ...]
+                Return only a JSON list of keywords (truely important ones):
+                ["keyword1", "keyword2", ...]
 
-Keywords:"""
+                Keywords:
+                """
 
         try:
             # Use google.genai client API - simple format

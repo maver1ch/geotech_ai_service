@@ -5,9 +5,12 @@ Simple wrapper for LangFuse tracing integration with GeotechAgent workflow
 
 import logging
 import uuid
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, TYPE_CHECKING
 from datetime import datetime, timezone
 from contextlib import contextmanager
+
+if TYPE_CHECKING:
+    from langfuse import Langfuse
 
 try:
     from langfuse import Langfuse
@@ -25,7 +28,7 @@ class LangFuseClient:
     
     def __init__(self):
         self.settings = get_settings()
-        self.client: Optional[Langfuse] = None
+        self.client: Optional['Langfuse'] = None
         self.enabled = self._initialize_client()
         
     def _initialize_client(self) -> bool:
@@ -115,7 +118,11 @@ class LangFuseClient:
             return
             
         try:
-            span = self.client.get_span(span_id)
+            # LangFuse API changed - skip span update for now
+            if hasattr(self.client, 'get_span'):
+                span = self.client.get_span(span_id)
+            else:
+                span = None
             if span:
                 update_data = {
                     "status_message": status,
@@ -136,15 +143,18 @@ class LangFuseClient:
             return
             
         try:
-            trace = self.client.get_trace(trace_id)
-            if trace:
-                trace.update(
-                    output={"status": status},
-                    end_time=datetime.now(timezone.utc)
-                )
-                logger.debug(f"Ended LangFuse trace: {trace_id}")
+            # Skip trace operations if API is having issues
+            if hasattr(self.client, 'get_trace'):
+                trace = self.client.get_trace(trace_id)
+                if trace:
+                    trace.update(
+                        output={"status": status},
+                        end_time=datetime.now(timezone.utc)
+                    )
+                    logger.debug(f"Ended LangFuse trace: {trace_id}")
         except Exception as e:
-            logger.error(f"Failed to end LangFuse trace {trace_id}: {e}")
+            # Suppress LangFuse errors to avoid spam
+            logger.debug(f"LangFuse trace end skipped {trace_id}: {e}")
     
     def flush(self) -> None:
         """Flush any pending traces"""

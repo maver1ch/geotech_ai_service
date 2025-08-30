@@ -1,29 +1,39 @@
-version: '3.8'
-
 services:
   geotech-ai:
     build: .
     container_name: geotech-ai-service
     ports:
       - "8000:8000"
+    env_file:
+      - .env
     environment:
       - QDRANT_HOST=qdrant
       - QDRANT_PORT=6333
+      - MONGODB_HOST=mongodb
+      - MONGODB_PORT=27017
       - ENVIRONMENT=production
-    env_file:
-      - .env
     volumes:
       - "./logs:/app/logs"      # Persistent observability logs
       - "./data:/app/data"
     depends_on:
+      - mongodb
       - qdrant
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
+      retries: 1 
       start_period: 40s
+
+  mongodb:
+    image: mongo:7.0
+    container_name: geotech-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    restart: unless-stopped
 
   qdrant:
     image: qdrant/qdrant:v1.14.1
@@ -36,6 +46,7 @@ services:
     restart: unless-stopped
 
 volumes:
+  mongodb_data:
   qdrant_data:
 
 networks:

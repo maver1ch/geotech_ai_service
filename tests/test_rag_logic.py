@@ -490,6 +490,8 @@ class TestMainSearchInterface(TestRAGService):
             # Verify hybrid search was called
             mock_hybrid.assert_called_once_with(
                 query="What is soil bearing capacity?",
+                vector_k=3,
+                keyword_k=3,
                 score_threshold=0.7
             )
             
@@ -548,13 +550,13 @@ class TestMainSearchInterface(TestRAGService):
             queries = ["bearing capacity", "settlement analysis", "CPT testing"]
             for query in queries:
                 rag_service.search(query, 5, 0.8)
-                mock_hybrid.assert_called_with(query=query, score_threshold=0.8)
+                mock_hybrid.assert_called_with(query=query, vector_k=5, keyword_k=5, score_threshold=0.8)
             
             # Test different thresholds
             thresholds = [0.5, 0.7, 0.9]
             for threshold in thresholds:
                 rag_service.search("test", 3, threshold)
-                mock_hybrid.assert_called_with(query="test", score_threshold=threshold)
+                mock_hybrid.assert_called_with(query="test", vector_k=3, keyword_k=3, score_threshold=threshold)
 
 
 class TestErrorHandlingAndEdgeCases(TestRAGService):
@@ -587,7 +589,7 @@ class TestErrorHandlingAndEdgeCases(TestRAGService):
             
             for query in special_queries:
                 citations = rag_service.search(query, 3, 0.7)
-                mock_hybrid.assert_called_with(query=query, score_threshold=0.7)
+                mock_hybrid.assert_called_with(query=query, vector_k=3, keyword_k=3, score_threshold=0.7)
                 assert isinstance(citations, list)
     
     def test_search_with_extreme_parameters(self, rag_service):
@@ -607,21 +609,18 @@ class TestErrorHandlingAndEdgeCases(TestRAGService):
             # All should complete without error
             assert mock_hybrid.call_count == 3
     
-    @pytest.mark.asyncio
-    async def test_concurrent_searches(self, rag_service):
+    def test_concurrent_searches(self, rag_service):
         """Test concurrent search operations"""
         with patch.object(rag_service, 'hybrid_search', new_callable=AsyncMock) as mock_hybrid:
             mock_hybrid.return_value = []
             
-            # Create multiple concurrent searches
+            # Create multiple searches (not truly concurrent since search() is synchronous)
             queries = [f"query {i}" for i in range(5)]
+            results = []
             
-            async def run_search(query):
-                return rag_service.search(query, 3, 0.7)
-            
-            # Run searches concurrently
-            tasks = [run_search(query) for query in queries]
-            results = await asyncio.gather(*tasks)
+            for query in queries:
+                result = rag_service.search(query, 3, 0.7)
+                results.append(result)
             
             # All searches should complete
             assert len(results) == 5

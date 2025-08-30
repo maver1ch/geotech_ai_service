@@ -36,33 +36,42 @@ system_prompt: |
   4.  **Cite Your Sources:** When your answer is based on retrieved documents, you MUST cite the source (e.g., "(Source: Settle3-Liquefaction-Theory-Manual.pdf)").
   
 planning_prompt: |
-  Analyze the user's question and determine the best approach:
-
-  ### KNOWLEDGE BASE: provides a comprehensive guide to Settle3. It features in-depth theory manuals on geotechnical 
-  concepts like consolidation, liquefaction, and CPT data interpretation. Users can also access practical 
-  modeling guides, answers to frequently asked questions (FAQs), and troubleshooting steps to effectively 
-  use the software and solve analyses.
+  **FIRST, CAREFULLY READ THE QUESTION AND DETERMINE KNOWLEDGE BASE SCOPE:**
+  
+  ### KNOWLEDGE BASE COVERAGE: 
+  Our knowledge base contains ONLY information about:
+  - **Settle3 software**: Theory manuals, modeling guides, FAQs, troubleshooting
+  - **CPT analysis**: Cone Penetration Test data interpretation and correlations
+  - **Liquefaction analysis**: Assessment methods, safety factors, correlations
+  - **Consolidation theory**: Primary and secondary consolidation concepts
+  - **Settlement calculations**: Basic elastic settlement formulas
+  - **Bearing capacity**: Terzaghi bearing capacity analysis for cohesionless soils
 
   **Question:** {question}
 
-  **Available Actions:**
-  1. **retrieve**: Search Knowledge Base for relevant information about geotechnical concepts if the query related to KNOWLEDGE BASE, even a little bit.
+  **SCOPE CHECK REQUIREMENT:**
+  You MUST first determine if this question falls within our knowledge base scope. If the question is about topics NOT covered in our knowledge base (like general engineering, non-geotechnical subjects, personal questions, etc.), you MUST respond with:
+  {{
+    "action": "out_of_scope",
+    "reasoning": "This question is outside our knowledge base scope which covers only Settle3, CPT analysis, liquefaction analysis, and basic geotechnical calculations."
+  }}
+
+  **Available Actions (ONLY if question is within scope):**
+  1. **retrieve**: Search Knowledge Base for relevant information about covered geotechnical concepts
   2. **calculate_settlement**: Use when user asks for settlement calculations (needs load and Young's modulus)
   3. **calculate_bearing_capacity**: Use when user asks for bearing capacity calculations (needs footing dimensions, soil properties)
   4. **both**: Use both retrieval and calculation if needed
-  5. **answer_directly**: Answer directly if question is simple and doesn't need tools or the content is about geotechinal but not related to the KNOWLEDGE BASE. 
 
-  **Decision Guidelines:**
-  - Use "retrieve" for: conceptual questions, Settle3 usage, CPT analysis, liquefaction analysis, general geotechnical theory
-  - Use "calculate_settlement" for: settlement calculations, elastic analysis, load-deformation questions
-  - Use "calculate_bearing_capacity" for: bearing capacity, foundation design, Terzaghi analysis
-  - Use "both" if calculation is needed but also requires background information
-  - Use "answer_directly" for: simple definitions, basic concepts, greetings
+  **Decision Guidelines (ONLY apply if question is within scope):**
+  - Use "retrieve" for: Settle3 usage, CPT analysis, liquefaction analysis, consolidation theory questions
+  - Use "calculate_settlement" for: settlement calculations with numerical values provided
+  - Use "calculate_bearing_capacity" for: bearing capacity calculations with numerical values provided
+  - Use "both" if calculation is needed but also requires background information from knowledge base
 
-  Respond with JSON format:
+  **Response Format:**
   {{
-    "action": "retrieve|calculate_settlement|calculate_bearing_capacity|both|answer_directly",
-    "reasoning": "Brief explanation of why this action was chosen",
+    "action": "out_of_scope|retrieve|calculate_settlement|calculate_bearing_capacity|both",
+    "reasoning": "Brief explanation of why this action was chosen and scope assessment",
     "tool_parameters": {{
       "load": number, "young_modulus": number (for settlement)
       "B": number, "gamma": number, "Df": number, "phi": integer (for bearing capacity)

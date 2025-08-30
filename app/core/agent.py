@@ -43,8 +43,7 @@ class GeotechAgent:
             model=self.settings.OPENAI_MODEL,
             timeout=self.settings.LLM_TIMEOUT,
             max_retries=self.settings.LLM_MAX_RETRIES,
-            max_completion_tokens=self.settings.LLM_MAX_COMPLETION_TOKENS,
-            temperature=self.settings.LLM_TEMPERATURE
+            max_completion_tokens=self.settings.LLM_MAX_COMPLETION_TOKENS
         )
         
         self.rag_service = RAGService(
@@ -77,7 +76,7 @@ class GeotechAgent:
         start_time = time.time()
         
         # Get trace logger if trace_id is provided
-        trace_logger = get_trace_logger(trace_id) if trace_id else logger
+        trace_logger = get_trace_logger(trace_id or "test-trace")
         trace_logger.log_agent_step("planning", "Starting agent planning phase")
         
         try:
@@ -127,10 +126,10 @@ class GeotechAgent:
             logger.error(f"Failed to parse LLM plan response: {e}")
             logger.error(f"Raw response: {response.get('content', 'No content')}")
             
-            # Fallback to direct answer for parsing errors
+            # Fallback to out_of_scope for parsing errors
             return {
-                "action": "answer_directly",
-                "reasoning": "Failed to parse structured response, answering directly",
+                "action": "out_of_scope",
+                "reasoning": "Failed to parse structured response, treating as out of scope",
                 "fallback": True
             }
         except Exception as e:
@@ -152,7 +151,7 @@ class GeotechAgent:
         start_time = time.time()
         
         # Get trace logger if trace_id is provided
-        trace_logger = get_trace_logger(trace_id) if trace_id else logger
+        trace_logger = get_trace_logger(trace_id or "test-trace")
         trace_logger.log_agent_step("execution", f"Starting execution for action: {plan['action']}")
         action = plan["action"]
         results = {
@@ -180,10 +179,11 @@ class GeotechAgent:
                 results.update(retrieval_results)
                 results.update(calc_results)
                 
-            elif action == "answer_directly":
-                # No execution needed, will synthesize directly
-                pass
-            
+            elif action == "out_of_scope":
+                # Question is outside knowledge base scope
+                results["out_of_scope"] = True
+                results["scope_message"] = "This question is outside our knowledge base scope which covers only Settle3, CPT analysis, liquefaction analysis, and basic geotechnical calculations."
+                
             else:
                 raise Exception(f"Unknown action: {action}")
             
@@ -277,12 +277,18 @@ class GeotechAgent:
         start_time = time.time()
         
         # Get trace logger if trace_id is provided
-        trace_logger = get_trace_logger(trace_id) if trace_id else logger
+        trace_logger = get_trace_logger(trace_id or "test-trace")
         trace_logger.log_agent_step("synthesis", "Starting answer synthesis")
         
         try:
+            # Check if question is out of scope
+            if execution_results.get("out_of_scope"):
+                scope_message = execution_results.get("scope_message", "This question is outside our knowledge base scope.")
+                trace_logger.log_agent_step("synthesis", "Question out of scope - returning standard message")
+                return f"I apologize, but this question is outside my knowledge base scope. I can only assist with the following geotechnical engineering topics:\n\n- **Settle3 software**: Theory manuals, modeling guides, FAQs, and troubleshooting\n- **CPT analysis**: Cone Penetration Test data interpretation and correlations\n- **Liquefaction analysis**: Assessment methods, safety factors, and correlations\n- **Consolidation theory**: Primary and secondary consolidation concepts\n- **Settlement calculations**: Basic elastic settlement formulas\n- **Bearing capacity**: Terzaghi bearing capacity analysis for cohesionless soils\n\nPlease ask questions related to these specific geotechnical topics."
+            
             # Extract results
-            retrieved_info = execution_results.get("retrieved_info", "No information retrieved.")
+            retrieved_info = execution_results.get("retrieved_info") or "No information retrieved."
             calculation_results = execution_results.get("calculation_results", "No calculations performed.")
             execution_error = execution_results.get("execution_error")
             

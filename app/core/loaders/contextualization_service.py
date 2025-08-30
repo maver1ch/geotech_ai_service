@@ -1,6 +1,6 @@
 """
 Simple Contextualization Service
-Thêm context đơn giản cho markdown chunks mà không cần LLM
+Add simple context to markdown chunks without LLM
 """
 
 import logging
@@ -8,6 +8,7 @@ from typing import List, Dict, Any
 from dataclasses import dataclass
 
 from .markdown_reader import MarkdownChunk
+from ..config.constants import RAGConstants
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +36,7 @@ class ContextualizedChunk:
         return doc
 
 class ContextualizationService:
-    """Simple contextualization service - thêm context metadata mà không dùng LLM"""
+    """Simple contextualization service - add context metadata without using LLM"""
     
     def __init__(self, add_context_header: bool = True):
         self.add_context_header = add_context_header
@@ -46,15 +47,14 @@ class ContextualizationService:
         filename: str
     ) -> List[ContextualizedChunk]:
         """
-        Đơn giản hóa: Thêm context metadata và header cho chunks
+        Simplified: Add context metadata and header to chunks
         
         Args:
-            chunks: List markdown chunks cần xử lý
-            full_document: Toàn bộ nội dung tài liệu (không sử dụng)
-            filename: Tên file để logging
+            chunks: List of markdown chunks to process
+            filename: Filename for logging
             
         Returns:
-            List contextualized chunks
+            List of contextualized chunks
         """
         logger.info(f"Starting simple contextualization for {len(chunks)} chunks from {filename}")
         
@@ -74,12 +74,12 @@ class ContextualizationService:
         chunk: MarkdownChunk,
         filename: str
     ) -> ContextualizedChunk:
-        """Thêm simple context cho một chunk"""
+        """Add simple context to a single chunk"""
         import time
         
         start_time = time.time()
         
-        # Tạo context header với hierarchy
+        # Create context header with hierarchy
         document_name = filename.replace('.md', '').replace('_', ' ').title()
         
         if self.add_context_header and chunk.header_level > 0:
@@ -99,7 +99,7 @@ class ContextualizationService:
             contextualized_content = context_header + chunk.content
             context_added = True
         else:
-            # Không thêm context header, chỉ giữ nguyên
+            # Don't add context header, keep original content
             contextualized_content = chunk.content
             context_added = False
         
@@ -117,13 +117,14 @@ class ContextualizationService:
         Determine if a chunk needs contextualization
         Skip very short chunks or chunks with specific patterns
         """
-        # Skip very short chunks
-        if chunk.word_count < 20:
+        
+        if chunk.word_count < RAGConstants.MIN_CONTEXTUALIZATION_WORD_COUNT:
             return False
             
         # Skip chunks that are mostly code or tables  
         content_lower = chunk.content.lower()
-        if content_lower.count('```') >= 2 or content_lower.count('|') > 10:
+        if (content_lower.count('```') >= RAGConstants.CODE_BLOCK_THRESHOLD or 
+            content_lower.count('|') > RAGConstants.TABLE_PIPE_THRESHOLD):
             return False
             
         return True

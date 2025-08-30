@@ -6,7 +6,7 @@ Pydantic-based settings management with environment variable validation
 import os
 from pathlib import Path
 from typing import Optional, List
-from pydantic import Field, validator
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings
 
 from .constants import (
@@ -75,27 +75,31 @@ class GeotechSettings(BaseSettings):
         env_file_encoding = "utf-8"
         case_sensitive = True
         
-    @validator("LOG_LEVEL")
+    @field_validator("LOG_LEVEL")
+    @classmethod
     def validate_log_level(cls, v):
         valid_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
         if v.upper() not in valid_levels:
             raise ValueError(f"LOG_LEVEL must be one of: {valid_levels}")
         return v.upper()
     
-    @validator("ENVIRONMENT") 
+    @field_validator("ENVIRONMENT")
+    @classmethod
     def validate_environment(cls, v):
-        valid_envs = ["development", "staging", "production"]
+        valid_envs = ["development", "staging", "production", "testing"]
         if v.lower() not in valid_envs:
             raise ValueError(f"ENVIRONMENT must be one of: {valid_envs}")
         return v.lower()
     
-    @validator("SIMILARITY_THRESHOLD")
+    @field_validator("SIMILARITY_THRESHOLD")
+    @classmethod
     def validate_similarity_threshold(cls, v):
         if not ValidationConstants.MIN_SIMILARITY_THRESHOLD <= v <= ValidationConstants.MAX_SIMILARITY_THRESHOLD:
             raise ValueError(f"SIMILARITY_THRESHOLD must be between {ValidationConstants.MIN_SIMILARITY_THRESHOLD} and {ValidationConstants.MAX_SIMILARITY_THRESHOLD}")
         return v
     
-    @validator("LLM_TEMPERATURE")
+    @field_validator("LLM_TEMPERATURE")
+    @classmethod
     def validate_temperature(cls, v):
         if not ValidationConstants.MIN_TEMPERATURE <= v <= ValidationConstants.MAX_TEMPERATURE:
             raise ValueError(f"LLM_TEMPERATURE must be between {ValidationConstants.MIN_TEMPERATURE} and {ValidationConstants.MAX_TEMPERATURE}")
@@ -120,6 +124,10 @@ class GeotechSettings(BaseSettings):
     def is_development(self) -> bool:
         """Check if running in development environment"""
         return self.ENVIRONMENT == "development"
+    
+    def is_testing(self) -> bool:
+        """Check if running in testing environment"""
+        return self.ENVIRONMENT == "testing"
     
     def has_langfuse(self) -> bool:
         """Check if LangFuse is configured"""

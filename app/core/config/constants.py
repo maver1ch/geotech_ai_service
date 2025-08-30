@@ -6,13 +6,34 @@ Centralized configuration constants to replace hard-coded values
 # RAG Configuration Constants
 class RAGConstants:
     MIN_KEYWORDS_THRESHOLD = 3
-    VECTOR_MAX_CHUNKS = 5
-    HYBRID_VECTOR_CHUNKS = 3
+    VECTOR_MAX_CHUNKS = 6
+    HYBRID_VECTOR_CHUNKS = 4
     KEYWORD_CHUNKS = 3
     DEFAULT_CHUNK_SIZE = 1000
     DEFAULT_CHUNK_OVERLAP = 150
     DEFAULT_TOP_K_RETRIEVAL = 3
-    DEFAULT_SIMILARITY_THRESHOLD = 0.7
+    DEFAULT_SIMILARITY_THRESHOLD = 0.1
+    
+    # Markdown chunking constants
+    MIN_CHUNK_SIZE = 600
+    MAX_CHUNK_SIZE = 1200
+    HEADER_MERGE_THRESHOLD = 200
+    
+    # Contextualization constants
+    MIN_CONTEXTUALIZATION_WORD_COUNT = 20
+    CODE_BLOCK_THRESHOLD = 2
+    TABLE_PIPE_THRESHOLD = 10
+    
+    # PDF OCR constants
+    MAX_PAGES_PER_CHUNK = 5
+    CHUNKING_PAGE_THRESHOLD = 5
+    OCR_MAX_RETRIES = 3
+    OCR_MAX_OUTPUT_TOKENS = 32768
+    OCR_TEMPERATURE = 0.1
+    
+    # PDF utilities constants
+    PDF_TEXT_SAMPLE_MAX_PAGES = 2
+    TOKEN_TO_CHAR_RATIO = 4
 
 # Database Configuration Constants  
 class DatabaseConstants:
@@ -29,7 +50,7 @@ class DatabaseConstants:
 class LLMConstants:
     DEFAULT_OPENAI_MODEL = "gpt-5-mini"
     DEFAULT_EMBEDDING_MODEL = "text-embedding-3-large"
-    DEFAULT_GEMINI_MODEL = "gemini-1.5-pro"
+    DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
     DEFAULT_GEMINI_VISION_MODEL = "gemini-1.5-pro"
     DEFAULT_TIMEOUT = 1
     DEFAULT_MAX_RETRIES = 3

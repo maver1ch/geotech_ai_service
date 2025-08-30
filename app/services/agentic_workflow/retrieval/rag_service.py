@@ -45,6 +45,8 @@ class RAGService:
             # Run smart hybrid search with new logic
             hybrid_results = asyncio.run(self.hybrid_search(
                 query=query, 
+                vector_k=k,
+                keyword_k=k,
                 score_threshold=score_threshold
             ))
             

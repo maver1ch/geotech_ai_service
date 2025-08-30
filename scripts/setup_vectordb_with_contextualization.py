@@ -1,6 +1,6 @@
 """
-Vector Database Setup với Contextualization
-Script để xử lý markdown files, contextualize chunks và index vào Qdrant
+Vector Database Setup with Contextualization
+Script to process markdown files, contextualize chunks and index into Qdrant
 """
 
 import asyncio
@@ -15,6 +15,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from app.core.config.settings import get_settings, get_rag_config, get_mongodb_config
+from app.core.config.constants import RAGConstants
 from app.core.storages.vectorstores.qdrant import QdrantVectorStore
 from app.core.storages.docstores.mongodb import MongoDocumentStore
 from app.core.embeddings.openai import OpenAIEmbedding
@@ -38,7 +39,11 @@ async def main():
         # Initialize services
         logger.info("Initializing services...")
         
-        vector_store = QdrantVectorStore()
+        vector_store = QdrantVectorStore(
+            host=settings.QDRANT_HOST,
+            port=settings.QDRANT_PORT,
+            collection_name=settings.QDRANT_COLLECTION_NAME
+        )
         embedding_service = OpenAIEmbedding(api_key=settings.OPENAI_API_KEY)
         
         # Initialize MongoDB document store
@@ -54,9 +59,9 @@ async def main():
         logger.info(f"Chunk configuration: size={chunk_config['chunk_size']}, overlap={chunk_config['chunk_overlap']}")
         
         markdown_reader = MarkdownReader(
-            min_chunk_size=200,  # Keep minimum size for quality
-            max_chunk_size=chunk_config['chunk_size'],  # Use from .env
-            header_merge_threshold=chunk_config['chunk_overlap']  # Use overlap as merge threshold
+            min_chunk_size=RAGConstants.MIN_CHUNK_SIZE,
+            max_chunk_size=RAGConstants.MAX_CHUNK_SIZE,
+            header_merge_threshold=RAGConstants.HEADER_MERGE_THRESHOLD
         )
         contextualization_service = ContextualizationService(
             add_context_header=True
@@ -73,7 +78,7 @@ async def main():
         # Process markdown files 
         # Path relative to project root
         project_root = Path(__file__).parent.parent
-        knowledge_base_path = project_root / "data" / "knowledge_base"
+        knowledge_base_path = project_root / "data" / "markdown"
         
         if not knowledge_base_path.exists():
             raise FileNotFoundError(f"Knowledge base directory not found: {knowledge_base_path}")
@@ -97,15 +102,10 @@ async def main():
             chunks = markdown_reader.read_markdown_file(str(md_file))
             logger.info(f"Created {len(chunks)} initial chunks")
             
-            # Step 2: Read full document for contextualization
-            with open(md_file, 'r', encoding='utf-8') as f:
-                full_document = f.read()
-            
-            # Step 3: Contextualize chunks
+            # Step 2: Contextualize chunks with simple header-based context
             logger.info("Step 2: Contextualizing chunks...")
             contextualized_chunks = await contextualization_service.contextualize_chunks(
                 chunks=chunks,
-                full_document=full_document,
                 filename=md_file.name
             )
             
@@ -113,7 +113,7 @@ async def main():
             successful_contextualizations = sum(1 for c in contextualized_chunks if c.context_added)
             logger.info(f"Added context headers to: {successful_contextualizations}/{len(contextualized_chunks)} chunks")
             
-            # Step 4: Generate embeddings and store
+            # Step 3: Generate embeddings and store
             logger.info("Step 3: Generating embeddings and storing...")
             
             if not contextualized_chunks:
@@ -184,7 +184,11 @@ async def main():
         logger.info(f"{'='*60}")
         logger.info(f"Files processed: {len(markdown_files)}")
         logger.info(f"Total chunks: {total_chunks_processed}")
-        logger.info(f"Context headers added: {total_contextualized} ({total_contextualized/total_chunks_processed*100:.1f}%)")
+        if total_chunks_processed > 0:
+            percentage = total_contextualized/total_chunks_processed*100
+            logger.info(f"Context headers added: {total_contextualized} ({percentage:.1f}%)")
+        else:
+            logger.info(f"Context headers added: {total_contextualized} (N/A - no chunks processed)")
         logger.info(f"Total processing time: {total_processing_time:.2f}s")
         logger.info(f"Average time per file: {total_processing_time/len(markdown_files):.2f}s")
         

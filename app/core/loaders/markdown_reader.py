@@ -1,6 +1,6 @@
 """
 Intelligent Markdown Reader with Header-based Chunking
-Đọc và chia Markdown thành chunks dựa trên cấu trúc headers
+Read and split Markdown into chunks based on header structure
 """
 
 import re
@@ -8,6 +8,8 @@ import logging
 from pathlib import Path
 from typing import List, Dict, Any
 from dataclasses import dataclass
+
+from ..config.constants import RAGConstants
 
 logger = logging.getLogger(__name__)
 
@@ -40,9 +42,9 @@ class MarkdownReader:
     
     def __init__(
         self,
-        min_chunk_size: int = 200,
-        max_chunk_size: int = 1500,
-        header_merge_threshold: int = 100
+        min_chunk_size: int = RAGConstants.MIN_CHUNK_SIZE,
+        max_chunk_size: int = RAGConstants.MAX_CHUNK_SIZE,
+        header_merge_threshold: int = RAGConstants.HEADER_MERGE_THRESHOLD
     ):
         self.min_chunk_size = min_chunk_size
         self.max_chunk_size = max_chunk_size

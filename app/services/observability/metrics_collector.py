@@ -22,10 +22,9 @@ class MetricsCollector:
             "retrieval_calls": 0,
             "successful_requests": 0,
             "failed_requests": 0,
-            "average_response_time": 0.0,
-            "start_time": datetime.now(timezone.utc).isoformat(),
-            "last_request_time": None
+            "average_response_time": 0.0
         }
+        self._start_time = datetime.now(timezone.utc)
         self._response_times = []
         logger.info("Metrics collector initialized")
     
@@ -33,7 +32,6 @@ class MetricsCollector:
         """Increment total request counter"""
         with self._lock:
             self._metrics["total_requests"] += 1
-            self._metrics["last_request_time"] = datetime.now(timezone.utc).isoformat()
             logger.debug("Incremented total_requests")
     
     def increment_tool_calls(self) -> None:
@@ -77,15 +75,12 @@ class MetricsCollector:
     def get_metrics(self) -> Dict[str, Any]:
         """Get current metrics snapshot"""
         with self._lock:
-            # Calculate uptime
-            start_time = datetime.fromisoformat(self._metrics["start_time"].replace('Z', '+00:00'))
-            uptime_seconds = (datetime.now(timezone.utc) - start_time).total_seconds()
+            uptime_seconds = (datetime.now(timezone.utc) - self._start_time).total_seconds()
             
             metrics_snapshot = {
                 **self._metrics,
                 "uptime_seconds": round(uptime_seconds, 2),
-                "requests_per_minute": self._calculate_rpm(),
-                "success_rate": self._calculate_success_rate()
+                "requests_per_minute": self._calculate_rpm()
             }
             
             logger.debug("Generated metrics snapshot")
@@ -93,23 +88,13 @@ class MetricsCollector:
     
     def _calculate_rpm(self) -> float:
         """Calculate requests per minute"""
-        if not self._metrics["last_request_time"]:
-            return 0.0
-            
-        start_time = datetime.fromisoformat(self._metrics["start_time"].replace('Z', '+00:00'))
-        uptime_minutes = (datetime.now(timezone.utc) - start_time).total_seconds() / 60
+        uptime_minutes = (datetime.now(timezone.utc) - self._start_time).total_seconds() / 60
         
         if uptime_minutes == 0:
             return 0.0
             
         return round(self._metrics["total_requests"] / uptime_minutes, 2)
     
-    def _calculate_success_rate(self) -> float:
-        """Calculate success rate percentage"""
-        total = self._metrics["total_requests"]
-        if total == 0:
-            return 0.0
-        return round((self._metrics["successful_requests"] / total) * 100, 2)
     
     def reset_metrics(self) -> None:
         """Reset all metrics (useful for testing)"""
@@ -120,10 +105,9 @@ class MetricsCollector:
                 "retrieval_calls": 0,
                 "successful_requests": 0,
                 "failed_requests": 0,
-                "average_response_time": 0.0,
-                "start_time": datetime.now(timezone.utc).isoformat(),
-                "last_request_time": None
+                "average_response_time": 0.0
             }
+            self._start_time = datetime.now(timezone.utc)
             self._response_times = []
             logger.info("Metrics reset")
 
