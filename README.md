@@ -23,7 +23,7 @@ The service implements a sophisticated **Plan → Execute → Synthesize** workf
 
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/maver1ch/geotech_ai_service.git
 cd geotech_ai_service
 
 # Copy and configure environment variables
