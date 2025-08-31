@@ -22,7 +22,7 @@ class RAGService:
     def __init__(self, openai_api_key: str, gemini_api_key: str, settings):
         self.settings = settings
         self.embedding_service = OpenAIEmbedding(api_key=openai_api_key)
-        self.gemini_service = GeminiService(api_key=gemini_api_key)
+        self.gemini_service = GeminiService(api_key=gemini_api_key, model_name=settings.GOOGLE_GENAI_MODEL)
         self.vector_store = QdrantVectorStore(
             host=settings.QDRANT_HOST,
             port=settings.QDRANT_PORT,
@@ -76,7 +76,7 @@ class RAGService:
             logger.info("Proceeding with HYBRID search.")
             vector_results_trimmed = vector_results[:RAGConstants.HYBRID_VECTOR_CHUNKS]
             
-            logger.info("Step 5: Performing keyword search...")
+            logger.info("Step 3: Performing keyword search...")
             keyword_results = await self._keyword_search_with_list(keywords, keyword_k)
             logger.info(f"Keyword search found {len(keyword_results)} results.")
             

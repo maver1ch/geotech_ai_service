@@ -26,7 +26,6 @@ class GeotechSettings(BaseSettings):
     GOOGLE_GENAI_API_KEY: str = Field(..., description="Google GenAI API key for multimodal processing")
     GOOGLE_GENAI_MODEL: str = Field(default=LLMConstants.DEFAULT_GEMINI_MODEL, description="Google GenAI model for text tasks")
     GOOGLE_GENAI_MODEL_VISION: str = Field(default=LLMConstants.DEFAULT_GEMINI_VISION_MODEL, description="Google GenAI model for vision tasks")
-    LLM_MAX_TOKENS: int = Field(default=LLMConstants.DEFAULT_MAX_TOKENS, description="Maximum tokens for LLM responses")
     
     # Qdrant Configuration  
     QDRANT_HOST: str = Field(default=DatabaseConstants.DEFAULT_QDRANT_HOST, description="Qdrant server host")
@@ -52,12 +51,9 @@ class GeotechSettings(BaseSettings):
     
     # API Configuration
     API_HOST: str = Field(default=APIConstants.DEFAULT_HOST, description="API server host")
-    API_PORT: int = Field(default=APIConstants.DEFAULT_PORT, description="API server port") 
-    API_DOCS_ENABLED: bool = Field(default=APIConstants.DEFAULT_API_DOCS_ENABLED, description="Enable API documentation")
+    API_PORT: int = Field(default=APIConstants.DEFAULT_PORT, description="API server port")
     
     # RAG Configuration
-    CHUNK_SIZE: int = Field(default=RAGConstants.DEFAULT_CHUNK_SIZE, description="Text chunk size for document processing")
-    CHUNK_OVERLAP: int = Field(default=RAGConstants.DEFAULT_CHUNK_OVERLAP, description="Text chunk overlap")
     TOP_K_RETRIEVAL: int = Field(default=RAGConstants.DEFAULT_TOP_K_RETRIEVAL, description="Number of documents to retrieve")
     SIMILARITY_THRESHOLD: float = Field(default=RAGConstants.DEFAULT_SIMILARITY_THRESHOLD, description="Minimum similarity score for retrieval")
     
@@ -163,8 +159,6 @@ def get_rag_config() -> dict:
     """Get RAG configuration as dictionary"""
     settings = get_settings()
     return {
-        "chunk_size": settings.CHUNK_SIZE,
-        "chunk_overlap": settings.CHUNK_OVERLAP,
         "top_k": settings.TOP_K_RETRIEVAL,
         "similarity_threshold": settings.SIMILARITY_THRESHOLD
     }
