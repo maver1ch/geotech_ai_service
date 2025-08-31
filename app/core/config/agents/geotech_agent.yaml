@@ -76,7 +76,7 @@ planning_prompt: |
       "load": number, "young_modulus": number (for settlement)
       "B": number, "gamma": number, "Df": number, "phi": integer (for bearing capacity)
     }},
-    "search_query": "query for knowledge retrieval" (only if action involves retrieve)
+    "search_query": "A concise, focused query express the core user intent. DO NOT include variations or long sentences."
   }}
 
 # Synthesis prompt - combines results into final answer
@@ -152,7 +152,7 @@ tools:
 # RAG (Retrieval) configuration
 retrieval:
   max_documents: 3
-  similarity_threshold: 0.4
+  similarity_threshold: 0.1
   knowledge_domains:
     - "CPT analysis and interpretation"
     - "Liquefaction assessment methods"  

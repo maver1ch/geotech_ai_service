@@ -108,17 +108,27 @@ async def ask_question(request: AskRequest):
         raise HTTPException(status_code=500, detail="Service not properly initialized")
     
     try:
+        logger.info(f"[API DEBUG] Received question: '{request.question}'")
+        logger.info(f"[API DEBUG] Agent type: {type(agent)}")
+        logger.info(f"[API DEBUG] Agent initialized: {agent is not None}")
+        
         # Process the question through the agent
-        response = agent.run(
+        response = await agent.run(
             question=request.question,
             trace_id=getattr(request, 'trace_id', None)
         )
         
+        logger.info(f"[API DEBUG] Response received:")
+        logger.info(f"    Answer length: {len(response.answer)} chars")
+        logger.info(f"    Citations: {len(response.citations)}")
+        logger.info(f"    Trace ID: {response.trace_id}")
         logger.info(f"Successfully processed question (trace_id={response.trace_id})")
         return response
         
     except Exception as e:
         logger.error(f"Failed to process question: {e}")
+        import traceback
+        logger.error(f"Full traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Failed to process question: {str(e)}")
 
 if __name__ == "__main__":
