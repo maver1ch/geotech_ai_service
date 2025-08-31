@@ -12,6 +12,7 @@ services:
       - MONGODB_HOST=mongodb
       - MONGODB_PORT=27017
       - ENVIRONMENT=production
+      - PYTHONUNBUFFERED=1
     volumes:
       - "./logs:/app/logs"      # Persistent observability logs
       - "./data:/app/data"
