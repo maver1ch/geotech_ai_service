@@ -191,12 +191,6 @@ def _mock_planning_response(self, user_message: str) -> Dict[str, Any]:
 
 ### 4.1 Mock Testing Costs
 
-**Development Costs:**
-- Initial mock implementation: ~8-10 hours
-- Mock logic maintenance: ~2-3 hours per major change
-- Debugging mock-specific issues: ~4-6 hours (current failures)
-- Total invested: ~15-20 hours
-
 **Ongoing Costs:**
 - Maintenance overhead: High
 - Mock-reality sync effort: Continuous
@@ -214,15 +208,6 @@ def _mock_planning_response(self, user_message: str) -> Dict[str, Any]:
 ✓ Zero mock maintenance overhead
 ```
 
-**Cost Structure:**
-```python
-# API Cost Analysis:
-Model: gpt-4o-mini ($0.15/1M input tokens)
-Test suite: ~25 tests × 200 tokens avg = 5K tokens  
-Monthly cost: ~$0.75 for 100 test runs
-Annual cost: ~$9 (negligible)
-```
-
 ### 4.3 Migration Effort Analysis
 
 **Code Changes Required:**
@@ -232,7 +217,6 @@ File: conftest.py → 5-10 lines modified
 File: test_agent_comprehensive.py → Change fixture parameter only  
 File: pytest.ini → Add API key configuration
 
-Total development time: ~2-3 hours
 ```
 
 ## 5. Evidence-Based Recommendation
@@ -259,8 +243,7 @@ Total development time: ~2-3 hours
 ```python
 # Proposed safeguards:
 COST_CONTROLS = {
-    "model": "gpt-4o-mini",  # Cheapest GPT-4 model
-    "max_tokens": 150,       # Limit response length
+    "model": "gpt-5-mini",  # Cheapest GPT-5 model
     "environment_gate": True, # Require explicit enabling
     "retry_logic": True      # Already implemented in OpenAIService
 }
@@ -298,7 +281,6 @@ def test_natural_language_variations(self, real_llm_agent):
 **MIGRATE TO REAL LLM TESTING** - The evidence overwhelmingly supports this transition:
 
 - **Technical Merit:** Mock limitations blocking 37% of planning tests
-- **Economic Sense:** $9/year cost vs 15+ hours of mock maintenance  
 - **Risk Profile:** Low migration risk, high reward
 - **Timeline:** 2-3 hours implementation vs weeks of mock debugging
 

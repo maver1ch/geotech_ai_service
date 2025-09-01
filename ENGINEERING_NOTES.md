@@ -14,30 +14,30 @@ The Geotechnical AI Service implements a sophisticated multi-tier architecture d
                       ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                        FASTAPI LAYER                                        │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐          │
-│  │   /ask      │ │  /health    │ │  /metrics   │ │    CORS     │          │
-│  │ Endpoint    │ │  Endpoint   │ │  Endpoint   │ │ Middleware  │          │
-│  └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘          │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐            │
+│  │   /ask      │ │  /health    │ │  /metrics   │ │    CORS     │            │
+│  │ Endpoint    │ │  Endpoint   │ │  Endpoint   │ │ Middleware  │            │
+│  └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘            │
 └─────────────────────┬───────────────────────────────────────────────────────┘
                       │
                       ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                      GEOTECH AGENT ORCHESTRATOR                            │
+│                      GEOTECH AGENT ORCHESTRATOR                             │
 │                                                                             │
-│  ┌─────────────┐     ┌─────────────┐     ┌─────────────┐                  │
-│  │    PLAN     │────▶│   EXECUTE   │────▶│  SYNTHESIZE │                  │
-│  │   Phase     │     │   Phase     │     │   Phase     │                  │
-│  └─────────────┘     └─────────────┘     └─────────────┘                  │
-│        │                    │                    │                         │
-│        ▼                    ▼                    ▼                         │
-│  Analyze Intent      Concurrent Ops      Combine Results                   │
-│  Determine Action    RAG + Tools         Generate Response                 │
-│  Validate Scope      Async Execution     Professional Tone                │
+│  ┌─────────────┐     ┌─────────────┐     ┌─────────────┐                    │
+│  │    PLAN     │────▶│   EXECUTE   │────▶│  SYNTHESIZE │                   │
+│  │   Phase     │     │   Phase     │     │   Phase     │                    │ 
+│  └─────────────┘     └─────────────┘     └─────────────┘                    │
+│        │                    │                    │                          │
+│        ▼                    ▼                    ▼                          │
+│  Analyze Intent      Concurrent Ops      Combine Results                    │
+│  Determine Action    RAG + Tools         Generate Response                  │
+│  Validate Scope      Async Execution     Professional Tone                  │
 └─────────────────────┬───────────────────────────────────────────────────────┘
                       │
                       ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    EXECUTION SERVICES LAYER                                │
+│                    EXECUTION SERVICES LAYER                                 │
 │                                                                             │
 │  ┌─────────────────────────────────┐    ┌─────────────────────────────────┐ │
 │  │          RAG SERVICE            │    │      CALCULATION TOOLS          │ │
@@ -67,12 +67,12 @@ The Geotechnical AI Service implements a sophisticated multi-tier architecture d
                       │                                                     │
                       ▼                                                     ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                        OBSERVABILITY LAYER                                 │
+│                        OBSERVABILITY LAYER                                  │
 │                                                                             │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐          │
-│  │ Structured  │ │   Trace     │ │   Metrics   │ │  LangFuse   │          │
-│  │  Logging    │ │     IDs     │ │ Collection  │ │ Integration │          │
-│  └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘          │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐            │
+│  │ Structured  │ │   Trace     │ │   Metrics   │ │  LangFuse   │            │
+│  │  Logging    │ │     IDs     │ │ Collection  │ │ Integration │            │
+│  └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘            │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -123,10 +123,10 @@ async def plan(question: str) → Dict[str, Any]:
 async def execute(plan: Dict) → Dict[str, Any]:
     │
     ├── Concurrent Task Creation
-    │   ├── RAG Task: await self._execute_retrieval(plan, question, trace_id)
-    │   └── Calc Task: await asyncio.to_thread(self._execute_calculation, plan)
+    │   ├── RAG Task: retrieving from a tiny local knowledge base
+    │   └── Calc Task: calculation tool
     │
-    ├── RAG Service Execution (if needed)
+    ├── RAG Service Execution
     │   ├── Hybrid Search Strategy
     │   │   ├── Vector Search (OpenAI embeddings → Qdrant similarity)
     │   │   ├── Keyword Search (Gemini extraction → MongoDB full-text)
@@ -138,7 +138,7 @@ async def execute(plan: Dict) → Dict[str, Any]:
     │       ├── Confidence scores (similarity thresholds)
     │       └── Content extraction (relevant text chunks)
     │
-    └── Tool Execution (if needed)
+    └── Tool Execution
         ├── Settlement Calculator: settlement = load / young_modulus
         └── Bearing Capacity Calculator: q_ult = γ*Df*Nq + 0.5*γ*B*Nr
             ├── Bearing factor lookup (table interpolation)
@@ -174,9 +174,9 @@ Query Input
     ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                    KEYWORD EXTRACTION                       │
-│              (Gemini AI Analysis)                          │
-│  Input: "What is CPT analysis for bearing capacity?"       │
-│  Output: ["CPT", "analysis", "bearing", "capacity"]       │
+│              (Gemini AI Analysis)                           │
+│  Input: "What is CPT analysis for bearing capacity?"        │
+│  Output: ["CPT", "analysis", "bearing", "capacity"]         │
 └─────────────────┬───────────────────────────────────────────┘
                   │
                   ▼
@@ -195,20 +195,20 @@ Query Input
                │                               │
                ▼                               ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                 HYBRID COMBINATION                          │
-│                                                             │
+│                 HYBRID COMBINATION                           │
+│                                                              │
 │  ┌─────────────────────────────────────────────────────────┐ │
 │  │            SMART DEDUPLICATION                          │ │
-│  │  • Text similarity detection (first 100 chars)         │ │
-│  │  • Source-based duplicate removal                      │ │
-│  │  • Confidence score preservation (highest wins)        │ │
+│  │  • Text similarity detection (first 100 chars)          │ │
+│  │  • Source-based duplicate removal                       │ │
+│  │  • Confidence score preservation (highest wins)         │ │
 │  └─────────────────────────────────────────────────────────┘ │
 │  ┌─────────────────────────────────────────────────────────┐ │
 │  │            CONFIDENCE RANKING                           │ │
-│  │  • Vector scores (semantic similarity: 0.0-1.0)        │ │
-│  │  • Keyword scores (text relevance: MongoDB textScore)  │ │
-│  │  • Combined ranking (score descending)                 │ │
-│  │  • Threshold filtering (similarity_threshold: 0.1)     │ │
+│  │  • Vector scores (semantic similarity: 0.0-1.0)         │ │
+│  │  • Keyword scores (text relevance: MongoDB textScore)   │ │
+│  │  • Combined ranking (score descending)                  │ │
+│  │  • Threshold filtering (similarity_threshold: 0.1)      │ │
 │  └─────────────────────────────────────────────────────────┘ │
 └─────────────────┬───────────────────────────────────────────┘
                   │
@@ -218,11 +218,16 @@ Query Input
 │               (Top-3 Citations)                             │
 │                                                             │
 │  Citation {                                                 │
-│    source_name: "Settle3-CPT-Theory-Manual.pdf"           │
-│    content: "CPT analysis involves..."                     │
-│    confidence_score: 0.89                                  │
-│    page_index: 15                                          │
+│    source_name: "Settle3-CPT-Theory-Manual.pdf"             │
+│    content: "CPT analysis involves..."                      │
+│    confidence_score: 0.89                                   │
+│    page_index: 15                                           │
 │  }                                                          │
+│                                                             │
+│  **Score Interpretation:**                                  │
+│  • 0.0 - 1.0: Primarily vector/semantic similarity          │
+│  • 1.0 - 10+: Keyword/lexical match scores (MongoDB)        │  
+│  • Higher scores prioritized in final ranking               │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -236,32 +241,32 @@ The system implements a **5-stage data processing pipeline** to transform raw en
 └─────────────────────────────────────────────────────────────────────────────────────┘
 
 Stage 1: PDF ACQUISITION
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+┌─────────────────┐     ┌─────────────────┐    ┌─────────────────┐
 │ Download PDFs   │───▶│  File Validation│───▶│   Size Check    │
-│ From Rocscience │    │  Format Check   │    │   <100MB/file   │
-│ Official Sources│    │  Corrupt Detect │    │                 │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+│ From Rocscience │     │  Format Check   │    │   <100MB/file   │
+│ Official Sources│     │  Corrupt Detect │    │                 │
+└─────────────────┘     └─────────────────┘    └─────────────────┘
 
 Stage 2: INTELLIGENT PDF SPLITTING  
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+┌─────────────────┐    ┌─────────────────┐     ┌─────────────────┐
 │  Analyze Pages  │───▶│  Split Strategy │───▶│  OCR Batches    │
-│  Count & Size   │    │  Max 5 pages    │    │  Parallel Proc  │
-│  Content Check  │    │  per OCR batch  │    │  Error Recovery │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+│  Count & Size   │    │  Max 5 pages    │     │  Parallel Proc  │
+│  Content Check  │    │  per OCR batch  │     │  Error Recovery │
+└─────────────────┘    └─────────────────┘     └─────────────────┘
 
 Stage 3: ADVANCED OCR (Gemini Vision AI)
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+┌─────────────────┐     ┌─────────────────┐    ┌─────────────────┐
 │  OCR Processing │───▶│ Content Extract │───▶│ Markdown Output │
-│  Gemini 1.5-Pro│    │ Text + Tables   │    │ Structured Fmt  │
-│  Vision Model   │    │ + Equations     │    │ Technical Docs  │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+│  Gemini 1.5-Pro │     │ Text + Tables   │    │ Structured Fmt  │
+│  Vision Model   │     │ + Equations     │    │ Technical Docs  │
+└─────────────────┘     └─────────────────┘    └─────────────────┘
 
 Stage 4: INTELLIGENT CHUNKING STRATEGY
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
 │ Header Analysis │───▶│ Section Split   │───▶│ Size Optimize   │
-│ Structure Parse │    │ Logical Breaks  │    │ 600-1200 words │
-│ Context Preserve│    │ Semantic Bound  │    │ Context Aware   │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+│ Structure Parse │     │ Logical Breaks  │     │ 600-1200 words  │
+│ Context Preserve│     │ Semantic Bound  │     │ Context Aware   │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
 
 Stage 5: DUAL STORAGE SYSTEM
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
@@ -328,16 +333,6 @@ Stage 5: DUAL STORAGE SYSTEM
 - **Performance**: Specialized systems optimized for their search types
 - **Quality**: Higher recall through complementary search approaches
 
-### Processing Quality Assurance
-
-- **Robust OCR**: Multi-retry processing with Gemini Vision AI
-- **Context Preservation**: Header-aware chunking maintains document structure
-- **Technical Accuracy**: Specialized handling of equations, tables, and diagrams
-- **Source Attribution**: Complete metadata tracking for citations
-- **Error Recovery**: Graceful handling of processing failures
-
-This pipeline transforms **complex engineering PDFs** into a **searchable knowledge base** while preserving the technical precision required for professional geotechnical applications.
-
 ### Retrieval Choices & Configuration
 
 #### **Chunk Size Strategy: 600-1200 Words**
@@ -375,9 +370,9 @@ SIMILARITY_THRESHOLD = 0.1       # Inclusive threshold for quality coverage
 - **If ≥3 keywords**: Proceed to **Hybrid Mode**
 
 **Step 3: Hybrid Search (if keywords ≥ 3)**
-- **Vector Results**: Keep all results from Step 1 (≤3 chunks)
+- **Vector Results**: Get up to 4 highest results from Step 1 
 - **Keyword Search**: Extract keywords → MongoDB full-text search → up to `k=3` results
-- **Combination**: Vector(≤3) + Keyword(≤3) = potential 1-6 results
+- **Combination**: Vector(≤4) + Keyword(≤3) = potential 1-7 results
 
 **Step 4: Smart Deduplication Strategy**
 ```
@@ -390,7 +385,7 @@ Deduplication Method: First 100 Characters Comparison
 6. Sort final results by confidence score (highest first)
 ```
 
-**Final Output**: Variable result count (typically 2-5 chunks after deduplication)
+**Final Output**: Variable result count (typically 4-7 chunks after deduplication)
 
 #### **Configuration Rationale**
 
@@ -415,30 +410,34 @@ Deduplication Method: First 100 Characters Comparison
 
 **Vector-Only Mode (~30% of queries):**
 - **Triggers**: Simple conceptual questions with <3 extracted keywords
-- **Results**: Up to 3 semantically similar chunks
+- **Results**: Up to 6 semantically similar chunks
 - **Example**: "What is liquefaction?"
 
 **Hybrid Mode (~70% of queries):**
 - **Triggers**: Complex technical questions with ≥3 specific keywords
-- **Process**: Vector(≤3) + Keyword(≤3) → Deduplication → 2-5 final results
+- **Process**: Vector(≤4) + Keyword(≤3) → Deduplication → 4-7 final results
 - **Example**: "Calculate bearing capacity using Terzaghi formula for sandy soil"
 
 #### **Evaluation Results**
 
 **Performance Metrics:**
-- **Hit@3 Rate**: 100% (all 11 evaluation questions found correct sources)
+- **Hit@2 Rate**: 100% (all 11 evaluation questions found correct sources)
 - **Response Time**: 25.0 seconds average (including hybrid processing)
 - **Technical Accuracy**: Professional engineering standard maintained
 - **Citation Quality**: Accurate source attribution with page references
 
 **Deduplication Efficiency:**
-- **Typical Scenario**: 6 potential results → 3-4 unique chunks after deduplication
-- **Overlap Rate**: ~30-40% between vector and keyword results
+- **Typical Scenario**: 7 potential results → 4-5 unique chunks after deduplication
+- **Overlap Rate**: ~25-35% between vector and keyword results
 - **Score Preservation**: Higher confidence results always retained
 
 #### **LLM-Based RAG Evaluation Methods**
 
-**Evaluation Dataset**: 11 professionally curated Q&A pairs from geotechnical engineering domain
+First, to generate the dataset, each source document was fed into ai.dev. We then prompted Gemini 2.5 Pro to construct a question set ensuring full coverage of the knowledge base. The output is a JSON dataset where each entry contains a question, the ground-truth answer, citations, and the context_base_on field.
+
+For the evaluation phase, we compared the RAG's output against the ground truth. For each question, we submitted the ground-truth answer alongside the RAG-generated answer to Gemini 2.5 Flash, which was tasked with scoring the RAG's response. We also leveraged the citation field to evaluate the relevance and accuracy of the context retrieved by the RAG system.
+
+**Evaluation Dataset**: 11 professionally curated Q&A pairs from dataset (check the data/ folder)
 
 **Multi-Dimensional Assessment:**
 ```
@@ -494,45 +493,45 @@ Client Request
     ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                   REQUEST TRACING                           │
-│  logger.info(f"[{trace_id}] Starting agent workflow")      │
-│  start_time = time.time()                                  │
+│  logger.info(f"[{trace_id}] Starting agent workflow")       │
+│  start_time = time.time()                                   │
 └─────────────────┬───────────────────────────────────────────┘
                   │
                   ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                 PHASE MONITORING                            │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐          │
-│  │   PLAN      │ │  EXECUTE    │ │ SYNTHESIZE  │          │
-│  │ + duration  │ │ + duration  │ │ + duration  │          │
-│  │ + status    │ │ + status    │ │ + status    │          │
-│  └─────────────┘ └─────────────┘ └─────────────┘          │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐            │
+│  │   PLAN      │ │  EXECUTE    │ │ SYNTHESIZE  │            │
+│  │ + duration  │ │ + duration  │ │ + duration  │            │
+│  │ + status    │ │ + status    │ │ + status    │            │
+│  └─────────────┘ └─────────────┘ └─────────────┘            │
 └─────────────────┬───────────────────────────────────────────┘
                   │
                   ▼
 ┌─────────────────────────────────────────────────────────────┐
-│              METRICS COLLECTION                             │
+│              METRICS COLLECTION                              │
 │  ┌─────────────────────────────────────────────────────────┐ │
 │  │  In-Memory Counters:                                    │ │
 │  │  • total_requests: 150                                  │ │
 │  │  • successful_requests: 147                             │ │
 │  │  • failed_requests: 3                                   │ │
-│  │  • tool_calls: 45 (settlement: 20, bearing: 25)        │ │
+│  │  • tool_calls: 45 (settlement: 20, bearing: 25)         │ │
 │  │  • retrieval_calls: 89                                  │ │
-│  │  • average_response_time: 1.8s                         │ │
-│  │  • requests_per_minute: 12.5                           │ │
+│  │  • average_response_time: 1.8s                          │ │
+│  │  • requests_per_minute: 12.5                            │ │
 │  └─────────────────────────────────────────────────────────┘ │
 └─────────────────┬───────────────────────────────────────────┘
                   │
                   ▼
 ┌─────────────────────────────────────────────────────────────┐
-│               LANGFUSE INTEGRATION                          │
+│               LANGFUSE INTEGRATION                           │
 │  ┌─────────────────────────────────────────────────────────┐ │
 │  │  Trace Visualization:                                   │ │
 │  │  • Request → Plan → Execute → Synthesize → Response     │ │
-│  │  • LLM calls with token counts and costs               │ │
-│  │  • RAG retrieval with search results                   │ │
-│  │  • Tool usage with input/output parameters             │ │
-│  │  • Error tracking with full context                    │ │
+│  │  • LLM calls with token counts and costs                │ │
+│  │  • RAG retrieval with search results                    │ │
+│  │  • Tool usage with input/output parameters              │ │
+│  │  • Error tracking with full context                     │ │
 │  └─────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────┘
 ```
