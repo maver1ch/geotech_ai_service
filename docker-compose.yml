@@ -1,13 +1,13 @@
 services:
 
-  geotech-ai:
-    build: .
-    container_name: geotech-ai-service
+  # Backend API Service
+  geotech-ai-backend:
+    build: ./backend
+    container_name: geotech-ai-backend
     ports:
       - "8000:8000"
     env_file:
       - .env
-
     environment:
       - QDRANT_HOST=qdrant
       - QDRANT_PORT=6333
@@ -17,8 +17,7 @@ services:
       - PYTHONUNBUFFERED=1
     volumes:
       - "./logs:/app/logs"
-      - "./data:/app/data"
-
+      - "./backend/data:/app/data"
     depends_on:
       setup:
         condition: service_completed_successfully
@@ -30,21 +29,33 @@ services:
       retries: 3
       start_period: 40s
 
+  # Frontend React App  
+  geotech-ai-frontend:
+    build: ./frontend
+    container_name: geotech-ai-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    volumes:
+      - "./frontend/src:/app/src"  # Hot reload for development
+    depends_on:
+      - geotech-ai-backend
+    restart: unless-stopped
+
+  # Database Setup Service
   setup:
-    build: . 
+    build: ./backend
     container_name: geotech-setup
     env_file:
       - .env
     environment:
       - QDRANT_HOST=qdrant
       - MONGODB_HOST=mongodb
-
     depends_on:
       - mongodb
       - qdrant
-
     command: ["python", "scripts/setup_vectordb_with_contextualization.py"]
-
     restart: "no"
 
   mongodb:

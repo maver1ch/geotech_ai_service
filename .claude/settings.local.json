@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__byterover-mcp__byterover-store-knowledge",
+      "Read(//c/Users/Admin/Geotech/.claude/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -4,7 +4,9 @@
 
 (b) calling a calculation tool when appropriate. Expose a simple API or DLL. Keep scope tight
 
-Preferred language to build: Python, or next.js or similar. 
+Preferred language to build: Python, or REACT.js or similar. 
+
+Build a chatbot with simple UI that is easy to run and test the features (i.e. a clear set up instruction with requirements and env file that just needs API keys – after this it should run without much issues) 
 
 **Requirements**
 
