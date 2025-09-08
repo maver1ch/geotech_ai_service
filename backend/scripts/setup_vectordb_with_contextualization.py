@@ -55,9 +55,10 @@ async def main():
             database_name=mongodb_config['database'],
             collection_name=mongodb_config['collection']
         )
-        # Get chunk settings from environment
+        # Get chunk settings from constants
         chunk_config = get_rag_config()
-        logger.info(f"Chunk configuration: size={chunk_config['chunk_size']}, overlap={chunk_config['chunk_overlap']}")
+        logger.info(f"RAG configuration: top_k={chunk_config['top_k']}, similarity_threshold={chunk_config['similarity_threshold']}")
+        logger.info(f"Chunk configuration: min_size={RAGConstants.MIN_CHUNK_SIZE}, max_size={RAGConstants.MAX_CHUNK_SIZE}")
         
         markdown_reader = MarkdownReader(
             min_chunk_size=RAGConstants.MIN_CHUNK_SIZE,
