@@ -55,7 +55,9 @@ class OpenAIService:
             )
             
             content = response.choices[0].message.content
-            if not content:
+            if not content or content.strip() == "":
+                # Handle empty content gracefully with retry mechanism
+                logger.warning("LLM returned empty content, treating as error for retry")
                 raise ValueError("LLM returned empty content.")
                 
             return {"status": "success", "content": content}

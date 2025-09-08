@@ -207,22 +207,41 @@ class GeotechAgent:
         tool_params = plan.get("tool_parameters", {})
         action = plan.get("action")
 
-        # Determine which tool to call based on action or parameters
-        if action == "calculate_settlement" or ("load" in tool_params and "young_modulus" in tool_params):
+        # Prioritize action field over parameter detection
+        if action == "calculate_settlement":
             self.tool_calls += 1
             get_metrics_collector().increment_tool_calls()
             required = ["load", "young_modulus"]
-            if not all(k in tool_params for k in required):
-                raise ValueError("Missing parameters for settlement calculation.")
+            if not all(k in tool_params and tool_params[k] is not None for k in required):
+                raise ValueError("Missing or invalid parameters for settlement calculation.")
             params = {k: tool_params[k] for k in required}
             return {"calculation_results": call_tool("settlement_calculator", **params)}
 
-        elif action == "calculate_bearing_capacity" or ("B" in tool_params and "gamma" in tool_params):
+        elif action == "calculate_bearing_capacity":
             self.tool_calls += 1
             get_metrics_collector().increment_tool_calls()
             required = ["B", "gamma", "Df", "phi"]
-            if not all(k in tool_params for k in required):
-                raise ValueError("Missing parameters for bearing capacity calculation.")
+            if not all(k in tool_params and tool_params[k] is not None for k in required):
+                raise ValueError("Missing or invalid parameters for bearing capacity calculation.")
+            params = {k: tool_params[k] for k in required}
+            return {"calculation_results": call_tool("bearing_capacity_calculator", **params)}
+
+        # Fallback to parameter detection only if action is unclear
+        elif ("load" in tool_params and "young_modulus" in tool_params and 
+              tool_params["load"] is not None and tool_params["young_modulus"] is not None):
+            self.tool_calls += 1
+            get_metrics_collector().increment_tool_calls()
+            required = ["load", "young_modulus"]
+            params = {k: tool_params[k] for k in required}
+            return {"calculation_results": call_tool("settlement_calculator", **params)}
+
+        elif ("B" in tool_params and "gamma" in tool_params and 
+              tool_params["B"] is not None and tool_params["gamma"] is not None):
+            self.tool_calls += 1
+            get_metrics_collector().increment_tool_calls()
+            required = ["B", "gamma", "Df", "phi"]
+            if not all(k in tool_params and tool_params[k] is not None for k in required):
+                raise ValueError("Missing or invalid parameters for bearing capacity calculation.")
             params = {k: tool_params[k] for k in required}
             return {"calculation_results": call_tool("bearing_capacity_calculator", **params)}
         
@@ -255,9 +274,16 @@ class GeotechAgent:
             response = await self.llm_service.call_llm(messages)
 
             if response["status"] != "success":
-                raise Exception(f"LLM synthesis failed: {response.get('error', 'Unknown error')}")
+                # Try fallback synthesis if primary LLM fails
+                logger.warning(f"Primary LLM synthesis failed: {response.get('error')}, attempting fallback")
+                return self._fallback_synthesis(question, execution_results)
             
-            final_content = response.get("content", "")
+            content = response.get("content", "").strip()
+            if not content:
+                logger.warning("LLM returned empty synthesis content, using fallback")
+                return self._fallback_synthesis(question, execution_results)
+            
+            final_content = content
             duration_ms = (time.time() - start_time) * 1000
             trace_logger.log_agent_step("synthesis", f"Answer synthesis completed", duration_ms=duration_ms)
             logger.info(f"[{trace_id}] EXITING agent.synthesize")
