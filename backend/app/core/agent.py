@@ -67,15 +67,12 @@ class GeotechAgent:
         logger.info(f"[{trace_id}] ENTERING agent.plan")
         start_time = time.time()
         trace_logger = get_trace_logger(trace_id or "test-trace")
-        trace_logger.log_agent_step("planning", "Starting agent planning phase")
         
         try:
             formatted_prompt = self.planning_prompt.format(question=question)
             messages = self.llm_service.create_conversation(system_prompt=self.system_prompt, user_message=formatted_prompt)
             
-            logger.info(f"[{trace_id}] AWAITING LLM call in plan...")
             response = await self.llm_service.call_llm(messages)
-            logger.info(f"[{trace_id}] LLM call in plan COMPLETED.")
             
             if response["status"] != "success":
                 raise Exception(f"LLM planning failed: {response.get('error', 'Unknown error')}")
@@ -242,7 +239,7 @@ class GeotechAgent:
         
         try:
             if execution_results.get("out_of_scope"):
-                return "I apologize, but this question is outside my knowledge base scope..."
+                return "I apologize, but this question is outside my knowledge base scope, which covers Settle3, CPT analysis, Liquefaction, and basic geotechnical calculations. Please ask me questions related to these topics."
             
             retrieved_info = execution_results.get("retrieved_info", "No information retrieved.")
             calculation_results = execution_results.get("calculation_results", "No calculations performed.")
@@ -255,9 +252,7 @@ class GeotechAgent:
             
             messages = self.llm_service.create_conversation(system_prompt=self.system_prompt, user_message=formatted_prompt)
             
-            logger.info(f"[{trace_id}] AWAITING LLM call in synthesize...")
             response = await self.llm_service.call_llm(messages)
-            logger.info(f"[{trace_id}] LLM call in synthesize COMPLETED.")
 
             if response["status"] != "success":
                 raise Exception(f"LLM synthesis failed: {response.get('error', 'Unknown error')}")

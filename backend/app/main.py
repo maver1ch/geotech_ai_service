@@ -136,8 +136,6 @@ async def ask_question(request: AskRequest):
         print(f"=== END API ENDPOINT DEBUG ===\n", flush=True)
         
         logger.info(f"[API DEBUG] Received question: '{request.question}'")
-        logger.info(f"[API DEBUG] Agent type: {type(agent)}")
-        logger.info(f"[API DEBUG] Agent initialized: {agent is not None}")
         
         # Process the question through the agent
         response = await agent.run(
@@ -153,9 +151,8 @@ async def ask_question(request: AskRequest):
         print(f"=== END API RESPONSE DEBUG ===\n", flush=True)
         
         logger.info(f"[API DEBUG] Response received:")
-        logger.info(f"    Answer length: {len(response.answer)} chars")
+        logger.info(f"    Answer: {response.answer}")
         logger.info(f"    Citations: {len(response.citations)}")
-        logger.info(f"    Trace ID: {response.trace_id}")
         logger.info(f"Successfully processed question (trace_id={response.trace_id})")
         return response
         

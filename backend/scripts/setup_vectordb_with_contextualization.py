@@ -30,7 +30,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 async def main():
-    """Main function để setup vector database với contextualization"""
+    """Main function to setup vector database with contextualization"""
     try:
         
         # Initialize settings

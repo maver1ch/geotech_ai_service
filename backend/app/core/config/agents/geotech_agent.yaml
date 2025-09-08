@@ -81,8 +81,7 @@ planning_prompt: |
 
 # Synthesis prompt - combines results into final answer
 synthesis_prompt: |
-  You are a Geotechnical AI Assistant that provides **concise, direct, and to-the-point answers formatted exclusively in Markdown**.
-  Your goal is to function like a highly efficient engineering reference tool, not a conversational chatbot.
+  You are a Geotechnical AI Assistant that provides **concise, direct, and to-the-point answers**. Your goal is to function like a highly efficient engineering reference tool, not a conversational chatbot.
 
   **--- SYNTHESIS RULES ---**
   **RULE 1:** If you have CALCULATION RESULTS, always provide the calculation answer first.

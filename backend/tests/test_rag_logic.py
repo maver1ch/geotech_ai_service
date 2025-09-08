@@ -35,7 +35,7 @@ class TestRAGService:
         settings.MONGODB_PORT = 27017
         settings.MONGODB_DATABASE = "test_db"
         settings.MONGODB_COLLECTION = "test_collection"
-        settings.SIMILARITY_THRESHOLD = 0.7
+        settings.SIMILARITY_THRESHOLD = 0.1
         return settings
     
     @pytest.fixture
@@ -153,7 +153,7 @@ class TestRAGServiceInitialization(TestRAGService):
             
             # Verify all services were created
             mock_openai.assert_called_once_with(api_key="test-openai-key")
-            mock_gemini.assert_called_once_with(api_key="test-gemini-key")
+            mock_gemini.assert_called_once_with(api_key="test-gemini-key", model_name=mock_settings.GOOGLE_GENAI_MODEL)
             mock_qdrant.assert_called_once_with(
                 host="localhost",
                 port=6333,
@@ -191,17 +191,18 @@ class TestRAGServiceInitialization(TestRAGService):
 class TestVectorSearch(TestRAGService):
     """Test vector search functionality"""
     
-    def test_vector_search_sync_success(self, rag_service, sample_embedding, sample_vector_results):
-        """Test synchronous vector search with successful results"""
+    @pytest.mark.asyncio
+    async def test_vector_search_success(self, rag_service, sample_embedding, sample_vector_results):
+        """Test asynchronous vector search with successful results"""
         # Setup mocks
         rag_service._mock_openai.get_query_embedding.return_value = sample_embedding
         rag_service._mock_qdrant.search.return_value = sample_vector_results
         
         # Test vector search
-        results = rag_service._vector_search_sync(
+        results = await rag_service.vector_search(
             query="What is bearing capacity?",
             k=3,
-            score_threshold=0.7
+            score_threshold=0.1
         )
         
         # Verify calls
@@ -209,7 +210,7 @@ class TestVectorSearch(TestRAGService):
         rag_service._mock_qdrant.search.assert_called_once_with(
             query_vector=sample_embedding,
             limit=3,
-            score_threshold=0.7
+            score_threshold=0.1
         )
         
         # Verify results format
@@ -220,40 +221,49 @@ class TestVectorSearch(TestRAGService):
             assert "metadata" in result
             assert result["search_type"] == "vector"
     
-    def test_vector_search_sync_with_error(self, rag_service):
+    @pytest.mark.asyncio
+    async def test_vector_search_with_error(self, rag_service):
         """Test vector search error handling"""
         # Setup mock to raise error
         rag_service._mock_openai.get_query_embedding.side_effect = Exception("Embedding API error")
         
         # Test error handling
-        results = rag_service._vector_search_sync("test query", 3, 0.7)
+        results = await rag_service.vector_search("test query", 3, 0.1)
         
         # Should return empty list on error
         assert results == []
     
     @pytest.mark.asyncio
-    async def test_vector_search_async(self, rag_service, sample_vector_results):
-        """Test asynchronous vector search wrapper"""
-        # Mock the sync method
-        with patch.object(rag_service, '_vector_search_sync', return_value=sample_vector_results) as mock_sync:
-            results = await rag_service._vector_search_async("test query", 5, 0.8)
-            
-            mock_sync.assert_called_once_with("test query", 5, 0.8)
-            assert results == sample_vector_results
+    async def test_vector_search(self, rag_service, sample_vector_results, sample_embedding):
+        """Test asynchronous vector search"""
+        # Setup mocks
+        rag_service._mock_openai.get_query_embedding.return_value = sample_embedding
+        rag_service._mock_qdrant.search.return_value = sample_vector_results
+        
+        results = await rag_service.vector_search("test query", 5, 0.1)
+        
+        # Verify results format
+        assert len(results) == len(sample_vector_results)
+        for result in results:
+            assert "text" in result
+            assert "score" in result
+            assert "metadata" in result
+            assert result["search_type"] == "vector"
     
-    def test_vector_search_different_parameters(self, rag_service, sample_embedding):
+    @pytest.mark.asyncio
+    async def test_vector_search_different_parameters(self, rag_service, sample_embedding):
         """Test vector search with different parameter values"""
         rag_service._mock_openai.get_query_embedding.return_value = sample_embedding
         rag_service._mock_qdrant.search.return_value = []
         
         # Test with different k values
         for k in [1, 3, 5, 10]:
-            rag_service._vector_search_sync("query", k, 0.7)
+            await rag_service.vector_search("query", k, 0.1)
             assert rag_service._mock_qdrant.search.call_args[1]['limit'] == k
         
         # Test with different thresholds
-        for threshold in [0.5, 0.7, 0.9]:
-            rag_service._vector_search_sync("query", 3, threshold)
+        for threshold in [0.1, 0.3, 0.5]:
+            await rag_service.vector_search("query", 3, threshold)
             assert rag_service._mock_qdrant.search.call_args[1]['score_threshold'] == threshold
 
 
@@ -263,21 +273,39 @@ class TestKeywordSearch(TestRAGService):
     @pytest.mark.asyncio
     async def test_keyword_search_success(self, rag_service, sample_keywords, sample_keyword_results):
         """Test keyword search with successful results"""
-        # Setup mocks - MongoDB query returns docs and scores separately
-        mock_docs = [result for result in sample_keyword_results]
-        mock_scores = [0.9, 0.8]  # Scores for each document
+        # Setup mocks for MongoDB collection.find()
+        mock_docs = [
+            {
+                "doc_id": "doc1",
+                "content": "Foundation bearing capacity analysis",
+                "metadata": {"source": "test.pdf", "page": 1},
+                "score": 0.9
+            },
+            {
+                "doc_id": "doc2", 
+                "content": "Soil settlement calculations",
+                "metadata": {"source": "test.pdf", "page": 2},
+                "score": 0.8
+            }
+        ]
         
-        rag_service._mock_mongodb.query = AsyncMock(return_value=(mock_docs, mock_scores))
+        # Create a mock cursor that properly implements iterator protocol
+        mock_cursor = Mock()
+        mock_cursor.sort.return_value = mock_cursor
+        mock_cursor.limit.return_value = mock_cursor
+        mock_cursor.__iter__ = Mock(return_value=iter(mock_docs))
+        
+        rag_service._mock_mongodb.collection.find.return_value = mock_cursor
         
         # Test keyword search
         results = await rag_service._keyword_search_with_list(sample_keywords, k=3)
         
-        # Verify MongoDB query was called
+        # Verify MongoDB collection.find was called
         expected_query = " ".join(sample_keywords)
-        rag_service._mock_mongodb.query.assert_called_once_with(
-            query=expected_query,
-            top_k=3,
-            with_scores=True
+        expected_filter = {"$text": {"$search": expected_query}}
+        rag_service._mock_mongodb.collection.find.assert_called_once_with(
+            expected_filter,
+            {"score": {"$meta": "textScore"}}
         )
         
         # Verify results format
@@ -287,7 +315,6 @@ class TestKeywordSearch(TestRAGService):
             assert "score" in result
             assert "metadata" in result
             assert result["search_type"] == "keyword"
-            assert result["score"] == mock_scores[i]
     
     @pytest.mark.asyncio
     async def test_keyword_search_empty_keywords(self, rag_service):
@@ -302,7 +329,7 @@ class TestKeywordSearch(TestRAGService):
     async def test_keyword_search_with_error(self, rag_service, sample_keywords):
         """Test keyword search error handling"""
         # Setup mock to raise error
-        rag_service._mock_mongodb.query = AsyncMock(side_effect=Exception("MongoDB error"))
+        rag_service._mock_mongodb.collection.find.side_effect = Exception("MongoDB error")
         
         # Test error handling
         results = await rag_service._keyword_search_with_list(sample_keywords, k=3)
@@ -313,10 +340,29 @@ class TestKeywordSearch(TestRAGService):
     @pytest.mark.asyncio
     async def test_keyword_search_formatting(self, rag_service, sample_keyword_results):
         """Test that keyword results are properly formatted"""
-        mock_docs = sample_keyword_results
-        mock_scores = [0.95, 0.87]
+        # Mock the documents returned by MongoDB
+        mock_docs = [
+            {
+                "doc_id": "doc1",
+                "content": "Foundation bearing capacity analysis",
+                "metadata": {"source": "test.pdf", "page": 1},
+                "score": 0.95
+            },
+            {
+                "doc_id": "doc2", 
+                "content": "Soil settlement calculations",
+                "metadata": {"source": "test.pdf", "page": 2},
+                "score": 0.87
+            }
+        ]
         
-        rag_service._mock_mongodb.query = AsyncMock(return_value=(mock_docs, mock_scores))
+        # Setup mocks for MongoDB collection.find()
+        mock_cursor = Mock()
+        mock_cursor.sort.return_value = mock_cursor
+        mock_cursor.limit.return_value = mock_cursor
+        mock_cursor.__iter__ = Mock(return_value=iter(mock_docs))
+        
+        rag_service._mock_mongodb.collection.find.return_value = mock_cursor
         
         results = await rag_service._keyword_search_with_list(["test"], k=2)
         
@@ -324,9 +370,9 @@ class TestKeywordSearch(TestRAGService):
         assert len(results) == 2
         for i, result in enumerate(results):
             expected_doc = mock_docs[i]
-            assert result["text"] == expected_doc["text"]
-            assert result["score"] == mock_scores[i]
-            assert result["metadata"] == expected_doc["attributes"]
+            assert result["text"] == expected_doc["content"]
+            assert result["score"] == expected_doc["score"]
+            assert result["metadata"] == expected_doc["metadata"]
             assert result["search_type"] == "keyword"
 
 
@@ -341,7 +387,7 @@ class TestHybridSearch(TestRAGService):
         rag_service._mock_gemini.extract_keywords = AsyncMock(return_value=sample_keywords)
         
         # Mock vector search
-        with patch.object(rag_service, '_vector_search_async', new_callable=AsyncMock) as mock_vector:
+        with patch.object(rag_service, 'vector_search', new_callable=AsyncMock) as mock_vector:
             mock_vector.return_value = sample_vector_results
             
             # Mock keyword search  
@@ -367,14 +413,14 @@ class TestHybridSearch(TestRAGService):
                         query="What is bearing capacity?",
                         vector_k=RAGConstants.VECTOR_MAX_CHUNKS,
                         keyword_k=RAGConstants.KEYWORD_CHUNKS,
-                        score_threshold=0.7
+                        score_threshold=0.1
                     )
                     
                     # Verify keyword extraction
                     rag_service._mock_gemini.extract_keywords.assert_called_once_with("What is bearing capacity?")
                     
                     # Verify vector search (should be trimmed to HYBRID_VECTOR_CHUNKS)
-                    mock_vector.assert_called_once_with("What is bearing capacity?", RAGConstants.VECTOR_MAX_CHUNKS, 0.7)
+                    mock_vector.assert_called_once_with("What is bearing capacity?", RAGConstants.VECTOR_MAX_CHUNKS, 0.1)
                     
                     # Verify keyword search
                     mock_keyword.assert_called_once_with(sample_keywords, RAGConstants.KEYWORD_CHUNKS)
@@ -393,7 +439,7 @@ class TestHybridSearch(TestRAGService):
         insufficient_keywords = ["bearing", "load"]  # Only 2 keywords < MIN_KEYWORDS_THRESHOLD (3)
         rag_service._mock_gemini.extract_keywords = AsyncMock(return_value=insufficient_keywords)
         
-        with patch.object(rag_service, '_vector_search_async', new_callable=AsyncMock) as mock_vector:
+        with patch.object(rag_service, 'vector_search', new_callable=AsyncMock) as mock_vector:
             mock_vector.return_value = sample_vector_results
             
             # Test hybrid search
@@ -401,14 +447,14 @@ class TestHybridSearch(TestRAGService):
                 query="bearing load",
                 vector_k=5,
                 keyword_k=3,
-                score_threshold=0.8
+                score_threshold=0.1
             )
             
             # Verify keyword extraction
             rag_service._mock_gemini.extract_keywords.assert_called_once_with("bearing load")
             
             # Should only do vector search, no keyword search
-            mock_vector.assert_called_once_with("bearing load", 5, 0.8)
+            mock_vector.assert_called_once_with("bearing load", 5, 0.1)
             
             # Results should be vector results only
             assert results == sample_vector_results
@@ -419,7 +465,7 @@ class TestHybridSearch(TestRAGService):
         # Setup mocks - keyword extraction fails
         rag_service._mock_gemini.extract_keywords = AsyncMock(side_effect=Exception("Gemini API error"))
         
-        with patch.object(rag_service, '_vector_search_async', new_callable=AsyncMock) as mock_vector:
+        with patch.object(rag_service, 'vector_search', new_callable=AsyncMock) as mock_vector:
             # First call (in try block) fails, second call (fallback) succeeds
             mock_vector.side_effect = [Exception("First call fails"), sample_vector_results]
             
@@ -428,7 +474,7 @@ class TestHybridSearch(TestRAGService):
                 query="test query",
                 vector_k=5,
                 keyword_k=3,
-                score_threshold=0.7
+                score_threshold=0.1
             )
             
             # Should fall back to vector search
@@ -465,7 +511,8 @@ class TestHybridSearch(TestRAGService):
 class TestMainSearchInterface(TestRAGService):
     """Test main search interface"""
     
-    def test_search_method_success(self, rag_service, sample_vector_results):
+    @pytest.mark.asyncio
+    async def test_search_method_success(self, rag_service, sample_vector_results):
         """Test main search method with successful results"""
         # Mock hybrid_search to return sample results
         with patch.object(rag_service, 'hybrid_search', new_callable=AsyncMock) as mock_hybrid:
@@ -481,10 +528,10 @@ class TestMainSearchInterface(TestRAGService):
             mock_hybrid.return_value = hybrid_results
             
             # Test search
-            citations = rag_service.search(
+            citations = await rag_service.search(
                 query="What is soil bearing capacity?",
                 k=3,
-                score_threshold=0.7
+                score_threshold=0.1
             )
             
             # Verify hybrid search was called
@@ -492,7 +539,7 @@ class TestMainSearchInterface(TestRAGService):
                 query="What is soil bearing capacity?",
                 vector_k=3,
                 keyword_k=3,
-                score_threshold=0.7
+                score_threshold=0.1
             )
             
             # Verify Citation objects were created
@@ -503,19 +550,21 @@ class TestMainSearchInterface(TestRAGService):
                 assert citation.content == hybrid_results[i]["text"]
                 assert citation.confidence_score == hybrid_results[i]["score"]
     
-    def test_search_method_with_error(self, rag_service):
+    @pytest.mark.asyncio
+    async def test_search_method_with_error(self, rag_service):
         """Test search method error handling"""
         # Mock hybrid_search to raise an error
         with patch.object(rag_service, 'hybrid_search', new_callable=AsyncMock) as mock_hybrid:
             mock_hybrid.side_effect = Exception("Search failed")
             
             # Test search error handling
-            citations = rag_service.search("test query", 3, 0.7)
+            citations = await rag_service.search("test query", 3, 0.1)
             
             # Should return empty list on error
             assert citations == []
     
-    def test_citation_object_creation(self, rag_service):
+    @pytest.mark.asyncio
+    async def test_citation_object_creation(self, rag_service):
         """Test Citation object creation from search results"""
         # Mock hybrid_search results
         with patch.object(rag_service, 'hybrid_search', new_callable=AsyncMock) as mock_hybrid:
@@ -531,7 +580,7 @@ class TestMainSearchInterface(TestRAGService):
             ]
             mock_hybrid.return_value = mock_results
             
-            citations = rag_service.search("foundation design", 1, 0.8)
+            citations = await rag_service.search("foundation design", 1, 0.1)
             
             # Verify Citation object properties
             assert len(citations) == 1
@@ -541,7 +590,8 @@ class TestMainSearchInterface(TestRAGService):
             assert citation.confidence_score == 0.92
             assert citation.page_index == 15
     
-    def test_search_with_different_parameters(self, rag_service):
+    @pytest.mark.asyncio
+    async def test_search_with_different_parameters(self, rag_service):
         """Test search with various parameter combinations"""
         with patch.object(rag_service, 'hybrid_search', new_callable=AsyncMock) as mock_hybrid:
             mock_hybrid.return_value = []
@@ -549,33 +599,35 @@ class TestMainSearchInterface(TestRAGService):
             # Test different queries
             queries = ["bearing capacity", "settlement analysis", "CPT testing"]
             for query in queries:
-                rag_service.search(query, 5, 0.8)
-                mock_hybrid.assert_called_with(query=query, vector_k=5, keyword_k=5, score_threshold=0.8)
+                await rag_service.search(query, 5, 0.1)
+                mock_hybrid.assert_called_with(query=query, vector_k=5, keyword_k=5, score_threshold=0.1)
             
             # Test different thresholds
-            thresholds = [0.5, 0.7, 0.9]
+            thresholds = [0.1, 0.3, 0.5]
             for threshold in thresholds:
-                rag_service.search("test", 3, threshold)
+                await rag_service.search("test", 3, threshold)
                 mock_hybrid.assert_called_with(query="test", vector_k=3, keyword_k=3, score_threshold=threshold)
 
 
 class TestErrorHandlingAndEdgeCases(TestRAGService):
     """Test error handling and edge cases"""
     
-    def test_search_with_empty_query(self, rag_service):
+    @pytest.mark.asyncio
+    async def test_search_with_empty_query(self, rag_service):
         """Test search with empty or invalid queries"""
         with patch.object(rag_service, 'hybrid_search', new_callable=AsyncMock) as mock_hybrid:
             mock_hybrid.return_value = []
             
             # Test empty string
-            citations = rag_service.search("", 3, 0.7)
+            citations = await rag_service.search("", 3, 0.1)
             assert citations == []
             
-            # Test None query
-            citations = rag_service.search(None, 3, 0.7)
+            # Test None query  
+            citations = await rag_service.search(None, 3, 0.1)
             assert citations == []
     
-    def test_search_with_special_characters(self, rag_service):
+    @pytest.mark.asyncio
+    async def test_search_with_special_characters(self, rag_service):
         """Test search with special characters and unicode"""
         with patch.object(rag_service, 'hybrid_search', new_callable=AsyncMock) as mock_hybrid:
             mock_hybrid.return_value = []
@@ -588,38 +640,40 @@ class TestErrorHandlingAndEdgeCases(TestRAGService):
             ]
             
             for query in special_queries:
-                citations = rag_service.search(query, 3, 0.7)
-                mock_hybrid.assert_called_with(query=query, vector_k=3, keyword_k=3, score_threshold=0.7)
+                citations = await rag_service.search(query, 3, 0.1)
+                mock_hybrid.assert_called_with(query=query, vector_k=3, keyword_k=3, score_threshold=0.1)
                 assert isinstance(citations, list)
     
-    def test_search_with_extreme_parameters(self, rag_service):
+    @pytest.mark.asyncio
+    async def test_search_with_extreme_parameters(self, rag_service):
         """Test search with extreme parameter values"""
         with patch.object(rag_service, 'hybrid_search', new_callable=AsyncMock) as mock_hybrid:
             mock_hybrid.return_value = []
             
             # Test with very high k
-            rag_service.search("test", k=1000, score_threshold=0.7)
+            await rag_service.search("test", k=1000, score_threshold=0.1)
             
             # Test with very low threshold
-            rag_service.search("test", k=5, score_threshold=0.01)
+            await rag_service.search("test", k=5, score_threshold=0.01)
             
             # Test with very high threshold
-            rag_service.search("test", k=5, score_threshold=0.99)
+            await rag_service.search("test", k=5, score_threshold=0.99)
             
             # All should complete without error
             assert mock_hybrid.call_count == 3
     
-    def test_concurrent_searches(self, rag_service):
+    @pytest.mark.asyncio
+    async def test_concurrent_searches(self, rag_service):
         """Test concurrent search operations"""
         with patch.object(rag_service, 'hybrid_search', new_callable=AsyncMock) as mock_hybrid:
             mock_hybrid.return_value = []
             
-            # Create multiple searches (not truly concurrent since search() is synchronous)
+            # Create multiple searches (sequential async calls)
             queries = [f"query {i}" for i in range(5)]
             results = []
             
             for query in queries:
-                result = rag_service.search(query, 3, 0.7)
+                result = await rag_service.search(query, 3, 0.1)
                 results.append(result)
             
             # All searches should complete
@@ -629,7 +683,8 @@ class TestErrorHandlingAndEdgeCases(TestRAGService):
             # Hybrid search should be called for each query
             assert mock_hybrid.call_count == 5
     
-    def test_malformed_search_results_handling(self, rag_service):
+    @pytest.mark.asyncio
+    async def test_malformed_search_results_handling(self, rag_service):
         """Test handling of malformed search results"""
         with patch.object(rag_service, 'hybrid_search', new_callable=AsyncMock) as mock_hybrid:
             # Return malformed results
@@ -643,7 +698,7 @@ class TestErrorHandlingAndEdgeCases(TestRAGService):
             mock_hybrid.return_value = malformed_results
             
             # Search should handle malformed results gracefully
-            citations = rag_service.search("test query", 5, 0.7)
+            citations = await rag_service.search("test query", 5, 0.1)
             
             # Should only return valid citations (filter out malformed ones)
             assert isinstance(citations, list)

@@ -190,14 +190,14 @@ class RAGQualityEvaluator:
             original_execute = self.agent.execute
             original_synthesize = self.agent.synthesize
             
-            def debug_plan(q, trace_id=None):
+            async def debug_plan(q, trace_id=None):
                 debug_print(f"🧠 PLANNING STEP:")
                 debug_print(f"  → Question: {q}")
-                plan_result = original_plan(q, trace_id)
+                plan_result = await original_plan(q, trace_id)
                 debug_print(f"  → Plan result: {plan_result}")
                 return plan_result
             
-            def debug_execute(plan, q, trace_id=None):
+            async def debug_execute(plan, q, trace_id=None):
                 debug_print(f"⚡ EXECUTION STEP:")
                 debug_print(f"  → Plan action: {plan.get('action', 'unknown')}")
                 
@@ -221,11 +221,11 @@ class RAGQualityEvaluator:
                             
                             if len(keywords) < RAGConstants.MIN_KEYWORDS_THRESHOLD:
                                 debug_print(f"      → Using VECTOR-ONLY search (< {RAGConstants.MIN_KEYWORDS_THRESHOLD} keywords)")
-                                results = await self.agent.rag_service._vector_search_async(query, vector_k, score_threshold)
+                                results = await self.agent.rag_service.vector_search(query, vector_k, score_threshold)
                                 debug_print(f"      → Vector search returned {len(results)} chunks")
                             else:
                                 debug_print(f"      → Using HYBRID search (≥ {RAGConstants.MIN_KEYWORDS_THRESHOLD} keywords)")
-                                vector_results = await self.agent.rag_service._vector_search_async(query, vector_k, score_threshold)
+                                vector_results = await self.agent.rag_service.vector_search(query, vector_k, score_threshold)
                                 keyword_results = await self.agent.rag_service._keyword_search_with_list(keywords, keyword_k)
                                 debug_print(f"      → Vector search: {len(vector_results)} chunks")
                                 debug_print(f"      → Keyword search: {len(keyword_results)} chunks")
@@ -260,7 +260,7 @@ class RAGQualityEvaluator:
                     # Temporarily patch hybrid_search
                     self.agent.rag_service.hybrid_search = debug_hybrid_search
                 
-                execution_result = original_execute(plan, q, trace_id)
+                execution_result = await original_execute(plan, q, trace_id)
                 
                 # Restore original search method
                 if hasattr(self.agent, 'rag_service') and 'original_search' in locals():
@@ -288,7 +288,7 @@ class RAGQualityEvaluator:
                     
                 return execution_result
                 
-            def debug_synthesize(q, exec_results, trace_id=None):
+            async def debug_synthesize(q, exec_results, trace_id=None):
                 debug_print(f"🔬 SYNTHESIS STEP:")
                 debug_print(f"  → Input question: {q}")
                 if 'citations' in exec_results:
@@ -310,7 +310,7 @@ class RAGQualityEvaluator:
                 # Patch LLM service to log synthesis prompt
                 original_call_llm = self.agent.llm_service.call_llm
                 
-                def debug_call_llm(messages, **kwargs):
+                async def debug_call_llm(messages, **kwargs):
                     debug_print(f"    📝 SYNTHESIS PROMPT FORMATION:")
                     if isinstance(messages, list) and len(messages) > 0:
                         last_message = messages[-1]
@@ -325,7 +325,7 @@ class RAGQualityEvaluator:
                                 context_section = prompt_content[context_start:context_start+300]
                                 debug_print(f"      → Context injection: {context_section}...")
                     
-                    response = original_call_llm(messages, **kwargs)
+                    response = await original_call_llm(messages, **kwargs)
                     
                     debug_print(f"    💬 LLM SYNTHESIS RESPONSE:")
                     debug_print(f"      → Response length: {len(str(response))} chars")
@@ -336,7 +336,7 @@ class RAGQualityEvaluator:
                 # Temporarily patch call_llm
                 self.agent.llm_service.call_llm = debug_call_llm
                     
-                synthesis_result = original_synthesize(q, exec_results, trace_id)
+                synthesis_result = await original_synthesize(q, exec_results, trace_id)
                 
                 # Restore original call_llm
                 self.agent.llm_service.call_llm = original_call_llm
@@ -349,7 +349,7 @@ class RAGQualityEvaluator:
             self.agent.execute = debug_execute  
             self.agent.synthesize = debug_synthesize
             
-            response = await loop.run_in_executor(None, self.agent.run, question)
+            response = await self.agent.run(question)
             
             # Restore original methods
             self.agent.plan = original_plan
