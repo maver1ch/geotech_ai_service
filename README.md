@@ -11,6 +11,9 @@ A geotechnical engineering AI assistant that answers technical questions through
 
 ### 1. Setup Environment
 ```bash
+git clone https://github.com/maver1ch/geotech_ai_service.git
+cd geotech_ai_service/
+
 # Copy environment template
 cp .env.example .env
 
