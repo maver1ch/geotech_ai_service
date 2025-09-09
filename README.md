@@ -25,7 +25,7 @@ cp .env.example .env
 ### 2. Start Everything
 ```bash
 # One command starts everything (backend + frontend + databases)
-docker-compose up --build
+docker compose up --build
 
 # Wait for services to start, then access:
 # Frontend UI: http://localhost:3000
@@ -35,11 +35,6 @@ docker-compose up --build
 ### 3. Test the Chatbot
 - Open http://localhost:3000 in your browser
 - You'll see a clean chat interface with example questions
-- Ask geotechnical questions like:
-  - "How does Settle3 calculate bearing capacity?"
-  - "Calculate settlement for load 100 kN and Young's modulus 20000 kPa"
-  - "What is liquefaction analysis?"
-  - "Explain CPT analysis methods"
 - The AI will show "Plan → Execute → Synthesize" workflow
 - Responses include source citations with confidence scores
 
